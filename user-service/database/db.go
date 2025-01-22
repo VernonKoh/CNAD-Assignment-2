@@ -21,7 +21,7 @@ func InitDB() {
 	// The connection string format is "username:password@tcp(host:port)/database_name".
 	// Replace "user:password" with actual credentials, "127.0.0.1:3306" with the MySQL server's address and port,
 	// and "car_sharing" with the actual database name.
-	DB, err = sql.Open("mysql", "user:password@tcp(127.0.0.1:3306)/car_sharing")
+	DB, err = sql.Open("mysql", "user:password@tcp(127.0.0.1:3306)/elderly")
 	if err != nil {
 		// If an error occurs while opening the connection, log the error and terminate the application.
 		log.Fatalf("Failed to connect to the database: %v", err)
