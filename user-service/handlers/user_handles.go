@@ -90,10 +90,21 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Insert the user into the database
-	query := "INSERT INTO users (email, password, name, role, verification_token) VALUES (?, ?, ?, ?, ?)"
-	_, err = database.DB.Exec(query, user.Email, user.Password, user.Name, user.Role, token)
+	// Start a transaction to ensure both inserts succeed or fail together
+	tx, err := database.DB.Begin()
 	if err != nil {
+		log.Printf("Error starting transaction: %v", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Internal server error"})
+		return
+	}
+
+	// Insert the user into the users table
+	query := "INSERT INTO users (email, password, name, role, verification_token) VALUES (?, ?, ?, ?, ?)"
+	result, err := tx.Exec(query, user.Email, user.Password, user.Name, user.Role, token)
+	if err != nil {
+		tx.Rollback()
 		log.Printf("Error inserting user into database: %v", err)
 		w.Header().Set("Content-Type", "application/json")
 		if strings.Contains(err.Error(), "Duplicate entry") {
@@ -105,7 +116,36 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	// Get the inserted user's ID
+	userID, err := result.LastInsertId()
+	if err != nil {
+		tx.Rollback()
+		log.Printf("Error getting last inserted user ID: %v", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Internal server error"})
+		return
+	}
 
+	// Insert into user_details with default values
+	query = "INSERT INTO user_details (user_id, age, gender, address, phone_number) VALUES (?, ?, ?, ?, ?)"
+	_, err = tx.Exec(query, userID, 0, "Unknown", "", "")
+	if err != nil {
+		tx.Rollback()
+		log.Printf("Error inserting user details: %v", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Internal server error"})
+		return
+	}
+	// Commit the transaction
+	if err := tx.Commit(); err != nil {
+		log.Printf("Error committing transaction: %v", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Internal server error"})
+		return
+	}
 	// Simulate sending the email
 	verificationLink := fmt.Sprintf("http://localhost:8081/api/v1/users/verify?token=%s", token)
 	log.Printf("Send email to %s with verification link: %s", user.Email, verificationLink)
