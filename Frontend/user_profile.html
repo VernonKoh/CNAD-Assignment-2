@@ -1,0 +1,174 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Profile Management</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      table,
+      th,
+      td {
+        border: 1px solid black;
+      }
+      th,
+      td {
+        padding: 8px;
+        text-align: left;
+      }
+      #form-container {
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>User Profile Management</h1>
+
+    <div id="user-profile">
+      <h2>Your Profile</h2>
+      <p id="userName">Hello, User!</p>
+      <p><strong>User ID:</strong> <span id="userID"></span></p>
+      <p><strong>JWT Token:</strong> <span id="jwtToken"></span></p>
+    </div>
+
+    <div id="form-container">
+      <h2 id="form-title">Update Profile</h2>
+      <form id="profile-form">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required /><br /><br />
+        
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required /><br /><br />
+        
+        <label for="role">Role:</label>
+        <input type="text" id="role" name="role" required /><br /><br />
+
+        <label for="age">Age:</label>
+        <input type="number" id="age" name="age" required /><br /><br />
+        
+        <label for="gender">Gender:</label>
+        <select id="gender" name="gender">
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select><br /><br />
+
+        <label for="address">Address:</label>
+        <input type="text" id="address" name="address" required /><br /><br />
+
+        <label for="phone_number">Phone Number:</label>
+        <input type="text" id="phone_number" name="phone_number" required /><br /><br />
+
+        <button type="submit">Update Profile</button>
+      </form>
+    </div>
+
+    <script>
+      const API_URL = "http://localhost:8081/api/v1/users/user_profile/";
+
+      // Get user details from localStorage
+      const userName = localStorage.getItem('userName');
+      const userID = localStorage.getItem('userID');
+      const jwtToken = localStorage.getItem('jwtToken');
+
+      // Display user info or redirect to login if not logged in
+      if (userName && jwtToken) {
+        document.getElementById('userName').textContent = `Hello, ${userName}!`;
+        document.getElementById('userID').textContent = userID;
+        document.getElementById('jwtToken').textContent = jwtToken;
+      } else {
+        alert('User not logged in!');
+        window.location.href = "login.html";
+      }
+
+      // Fetch user profile data and populate the form
+      async function fetchUserProfile() {
+        try {
+          const response = await fetch(`${API_URL}/${userID}`, {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${jwtToken}` },
+          });
+
+          if (!response.ok) {
+            throw new Error("Error fetching user profile");
+          }
+
+          const userData = await response.json();
+          document.getElementById('name').value = userData.name;
+          document.getElementById('email').value = userData.email;
+          document.getElementById('role').value = userData.role;
+          document.getElementById('age').value = userData.age;
+          document.getElementById('gender').value = userData.gender;
+          document.getElementById('address').value = userData.address;
+          document.getElementById('phone_number').value = userData.phone_number;
+        } catch (error) {
+          console.error(error);
+          alert("Error fetching user profile. Please try again later.");
+        }
+      }
+
+      // Update user profile data
+      document.getElementById('profile-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // Get user details from form inputs
+        const name = document.getElementById('name').value;
+        const email = document.getElementById('email').value;
+        const role = document.getElementById('role').value;
+        const age = parseInt(document.getElementById('age').value, 10); // Ensure age is an integer
+        const gender = document.getElementById('gender').value;
+        const address = document.getElementById('address').value;
+        const phone_number = document.getElementById('phone_number').value;
+
+
+        // Check if age is a valid number
+        if (isNaN(age)) {
+            alert("Please enter a valid age.");
+            return;
+        }
+
+        // Create a user object
+        const userProfile = { name, email, role, age, gender, address, phone_number };
+
+        try {
+          const response = await fetch(`${API_URL}/${userID}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${jwtToken}`,
+            },
+            body: JSON.stringify(userProfile),
+
+          });
+
+          if (response.ok) {
+            // If the username has changed, update localStorage
+            if (userName !== name) {
+                localStorage.setItem('userName', name); // Update username in localStorage
+                document.getElementById('userName').textContent = `Hello, ${name}!`; // Update greeting
+            }
+            alert('Profile updated successfully!');
+            fetchUserProfile(); // Refresh user data after update
+          } else {
+            alert('Failed to update profile.');
+          }
+        } catch (error) {
+          console.error('Error updating profile:', error);
+          alert('An error occurred. Please try again.');
+        }
+      });
+
+      // Initial fetch for user profile data
+      fetchUserProfile();
+    </script>
+  </body>
+</html>
