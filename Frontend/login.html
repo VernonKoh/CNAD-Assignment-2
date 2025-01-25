@@ -77,24 +77,71 @@
                 });
 
                 const data = await response.json();
-                console.log("Login response data:", data); // Debug API response
-
                 if (response.ok) {
-                    // Save user details to localStorage
-                    localStorage.setItem('userID', data.userID); // Save user ID
-                    localStorage.setItem('userName', data.name); // Save user's name
-                    localStorage.setItem('jwtToken', data.token); // Save JWT token
+    console.log("Login response:", data); // Log the server response for debugging
 
-                    alert(`Login successful! Welcome, ${data.name}`);
-                    window.location.href = 'welcome.html'; // Redirect to welcome page
-                } else {
-                    document.getElementById('message').innerText = data.error || 'Login failed';
-                }
+    // Save user data to localStorage
+    localStorage.setItem('userID', data.userID); // Save user ID
+    localStorage.setItem('userName', data.name); // Save user's name
+    localStorage.setItem('jwtToken', data.token); // Save JWT token
+
+    // Verify the data was saved to localStorage
+    console.log("LocalStorage values set:");
+    console.log("UserID:", localStorage.getItem('userID'));
+    console.log("UserName:", localStorage.getItem('userName'));
+    console.log("JWT Token:", localStorage.getItem('jwtToken'));
+
+    alert(`Login successful! Welcome, ${data.name}`);
+    window.location.href = 'welcome.html'; // Redirect to welcome page
+} else {
+    document.getElementById('message').innerText = data.error || 'Login failed';
+}
+
+
             } catch (error) {
-                console.error('Error logging in:', error);
                 document.getElementById('message').innerText = 'An error occurred. Please try again.';
             }
         });
+    </script>
+
+    <!-- FaceIO Authentication -->
+    <div class="text-center mt-4">
+        <button class="btn btn-secondary" onclick="authenticateUser()">Authenticate User</button>
+    </div>
+    <div id="faceio-modal"></div>
+    <script src="https://cdn.faceio.net/fio.js"></script>
+    <script>
+        // Instantiate fio.js with your application Public ID
+        const faceio = new faceIO("fioaf90f");
+
+        function authenticateUser() {
+    faceio.authenticate({
+        locale: "auto", // Default locale
+    }).then(userData => {
+        console.log("Authentication successful:", userData);
+
+        // Save authenticated user details in localStorage
+        localStorage.setItem('userName', userData.payload.email); // Replace 'email' with your payload field
+        localStorage.setItem('jwtToken', "mock-jwt-token-for-authentication"); // Mock token (or retrieve from server)
+        
+        alert(`Welcome back, ${userData.payload.email}!`);
+        window.location.href = "welcome.html"; // Redirect to the welcome page
+    }).catch(errCode => {
+        console.error("Authentication failed with error code:", errCode);
+
+        switch (errCode) {
+            case fioErrCode.NO_FACE_DETECTED:
+                alert("No face detected. Please ensure your face is visible to the camera.");
+                break;
+            case fioErrCode.FACE_MISMATCH:
+                alert("Face mismatch. Please ensure you are using the enrolled face.");
+                break;
+            default:
+                alert(`Authentication failed with error code: ${errCode}`);
+        }
+    });
+}
+
     </script>
 </body>
 

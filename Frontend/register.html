@@ -95,6 +95,49 @@
             }
         });
     </script>
+
+    <!-- FaceIO Enrollment -->
+    <div class="text-center mt-4">
+        <button class="btn btn-secondary" onclick="enrollNewUser()">Enroll New User</button>
+    </div>
+    <div id="faceio-modal"></div>
+    <script src="https://cdn.faceio.net/fio.js"></script>
+    <script>
+        // Instantiate fio.js with your application Public ID
+        const faceio = new faceIO("fioaf90f");
+
+        function enrollNewUser() {
+    const email = document.getElementById("email")?.value; // Get email from input field
+
+    if (!email) {
+        alert("Please enter an email before enrolling!");
+        return;
+    }
+
+    // Generate a unique identifier to avoid enrollment conflicts
+    const uniqueWhoami = `${email}-${Date.now()}`;
+
+    faceio.enroll({
+        locale: "auto", // Automatically detect the user's locale
+        payload: {
+            whoami: uniqueWhoami, // Unique identifier for each enrollment
+            email: email,         // Include the user's email for clarity
+        },
+    }).then(userInfo => {
+        // Enrollment successful
+        alert(`Enrollment successful! 
+               Facial ID: ${userInfo.facialId}
+               Email: ${email}`);
+        console.log("Enrollment Info:", userInfo);
+    }).catch(errCode => {
+        // Handle enrollment failure
+        console.error("Enrollment failed with error code:", errCode);
+        alert(`Enrollment failed. Error code: ${errCode}`);
+    });
+}
+
+
+    </script>
 </body>
 
 </html>

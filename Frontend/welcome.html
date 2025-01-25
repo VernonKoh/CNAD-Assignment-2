@@ -825,67 +825,106 @@
 
     <script>
         loadNavbar();  // Load navbar dynamically
+    
+        // Retrieve localStorage values
         const userName = localStorage.getItem('userName');
         const userID = localStorage.getItem('userID');
         const jwtToken = localStorage.getItem('jwtToken');
+    
+        // Debugging: Log retrieved values
+        console.log("LocalStorage Debugging:");
+console.log("UserName:", localStorage.getItem('userName'));
+console.log("JWT Token:", localStorage.getItem('jwtToken'));
 
+// Check login status
+if (localStorage.getItem('userName') && localStorage.getItem('jwtToken')) {
+    document.getElementById('userName').textContent = `Hello, ${localStorage.getItem('userName')}!`;
+} else {
+    alert('User not logged in!');
+    localStorage.clear(); // Clear invalid data
+    window.location.href = "login.html";
+}
+
+    
+        // Check if user is logged in
         if (userName && jwtToken) {
-            document.getElementById('userName').textContent = `Hello, ${userName}!`;
-            document.getElementById('jwtToken').textContent = jwtToken;
+            // Display the user's name and token
+            const userNameElement = document.getElementById('userName');
+            if (userNameElement) {
+                userNameElement.textContent = `Hello, ${userName}!`;
+            } else {
+                console.error("Element with ID 'userName' not found in DOM.");
+            }
+    
+            const jwtTokenElement = document.getElementById('jwtToken');
+            if (jwtTokenElement) {
+                jwtTokenElement.textContent = jwtToken;
+            } else {
+                console.error("Element with ID 'jwtToken' not found in DOM.");
+            }
         } else {
+            // If not logged in, redirect to login.html
             alert('User not logged in!');
+            localStorage.clear(); // Clear any invalid or partial data
             window.location.href = "login.html";
         }
-
-        // Load the navbar dynamically
+    
+        // Dynamically load the navbar
         async function loadNavbar() {
             try {
                 const response = await fetch('navbar.html');
-                const navbarHTML = await response.text();
-                document.getElementById('navbar-container').innerHTML = navbarHTML;
+                if (response.ok) {
+                    const navbarHTML = await response.text();
+                    document.getElementById('navbar-container').innerHTML = navbarHTML;
+                } else {
+                    console.error("Failed to load navbar: ", response.status, response.statusText);
+                }
             } catch (error) {
                 console.error('Failed to load navbar:', error);
             }
         }
+    
+        // Handle header shadow on scroll
         let header = document.querySelector("header");
-
         window.addEventListener("scroll", () => {
             header.classList.toggle("shadow", window.scrollY > 0);
         });
-
+    
+        // Handle navbar menu toggle
         let menu = document.querySelector(".navbar");
-
         document.querySelector("#menu-icon").onclick = () => {
             menu.classList.toggle("active");
         };
-
-        /* remove shadow on scroll */
+    
+        // Remove active shadow on scroll
         window.onscroll = () => {
             menu.classList.remove("active");
         };
-        /* Newsletter Subscribe send emails */
+    
+        // Newsletter subscription function
         function sendNews() {
-
-    Email.send({
-        Host: "smtp.elasticemail.com",
-        Username: 'vernonkoh123@gmail.com',
-        Password: "F3067591595AB4C402CB0B5A3FF33C715A30",
-        To: document.getElementById("newsEmail").value,
-        From: 'vernonkoh123@gmail.com',
-        Subject: "Subscription on Updates of discounts",
-        Body: "Email: " + document.getElementById("newsEmail").value
-            + "<br> Message: We will update you on future news Thanks for Subscribing!! "
-
-    }).then(
-        message => alert("Message Sent Succesfully")
-    );
-    }
-    /* remove shadow on scroll */
-    window.onscroll = () => {
-            menu.classList.remove("active");
-        };
-        fetchUserMembershipBenefits();  // Fetch user membership benefits
+            Email.send({
+                Host: "smtp.elasticemail.com",
+                Username: 'vernonkoh123@gmail.com',
+                Password: "F3067591595AB4C402CB0B5A3FF33C715A30",
+                To: document.getElementById("newsEmail").value,
+                From: 'vernonkoh123@gmail.com',
+                Subject: "Subscription on Updates of discounts",
+                Body: "Email: " + document.getElementById("newsEmail").value
+                    + "<br> Message: We will update you on future news. Thanks for Subscribing!!"
+            }).then(
+                message => alert("Message Sent Successfully")
+            );
+        }
+    
+        // Fetch user membership benefits (placeholder function)
+        function fetchUserMembershipBenefits() {
+            console.log("Fetching user membership benefits...");
+            // Add your implementation here
+        }
+        fetchUserMembershipBenefits();  // Call the function to fetch membership benefits
     </script>
     <script src="https://smtpjs.com/v3/smtp.js"></script>
+    
 </body>
 </html>
