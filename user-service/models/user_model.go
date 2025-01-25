@@ -13,3 +13,15 @@ type User struct {
 	IsVerified        bool      `json:"is_verified"`        // Add this field
 	VerificationToken string    `json:"verification_token"` // Add this field if needed for verification handling
 }
+
+// Struct to hold user profile data
+type UserProfile struct {
+	ID          int    `json:"id"`
+	Email       string `json:"email"`
+	Name        string `json:"name"`
+	Role        string `json:"role"`
+	Age         int    `json:"age"`
+	Gender      string `json:"gender"`
+	Address     string `json:"address"`
+	PhoneNumber string `json:"phone_number"`
+}

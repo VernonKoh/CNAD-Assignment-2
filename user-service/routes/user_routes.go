@@ -14,7 +14,13 @@ func RegisterUserRoutes(router *mux.Router) {
 	userRouter.HandleFunc("/verify", handlers.VerifyUser).Methods("GET") // Add this route for verification
 	userRouter.HandleFunc("/membership-tiers", handlers.GetMembershipTiers).Methods("GET")
 
-	userRouter.HandleFunc("/{id}", handlers.GetUserProfile).Methods("GET")
-	userRouter.HandleFunc("/{id}", handlers.UpdateUserProfile).Methods("PUT")
+	userRouter.HandleFunc("/user_profile/{id}", handlers.GetUserProfile).Methods("GET")
+	userRouter.HandleFunc("/user_profile/{id}", handlers.UpdateUserProfile).Methods("PUT")
 	userRouter.HandleFunc("/{id}/membership-benefits", handlers.GetUserMembershipBenefits).Methods("GET")
 }
+
+//get user profile
+//http://localhost:8081/api/v1/users/2
+
+//update user profile
+//curl -X PUT "http://localhost:8081/api/v1/users/user_profile/2" -H "Content-Type: application/json" -d "{\"email\": \"updated.email@example.com\", \"name\": \"Updated Name\", \"age\": 65, \"gender\": \"Male\", \"address\": \"123 Updated Address, City\", \"phone_number\": \"1234567890\"}"

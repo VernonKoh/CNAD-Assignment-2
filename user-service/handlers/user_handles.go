@@ -363,11 +363,20 @@ func GetUserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user models.User
+	var profile models.UserProfile
 
-	// Fetch user data from the database
-	query := "SELECT id, email, name, role FROM users WHERE id = ?"
-	err = database.DB.QueryRow(query, userID).Scan(&user.ID, &user.Email, &user.Name, &user.Role)
+	// Fetch user data and details from the database
+	query := `
+		SELECT 
+			u.id, u.email, u.name, u.role, 
+			ud.age, ud.gender, ud.address, ud.phone_number
+		FROM users u
+		LEFT JOIN user_details ud ON u.id = ud.user_id
+		WHERE u.id = ?`
+	err = database.DB.QueryRow(query, userID).Scan(
+		&profile.ID, &profile.Email, &profile.Name, &profile.Role,
+		&profile.Age, &profile.Gender, &profile.Address, &profile.PhoneNumber,
+	)
 	if err != nil {
 		log.Printf("Error fetching user profile for ID=%d: %v", userID, err)
 		w.WriteHeader(http.StatusNotFound)
@@ -377,45 +386,69 @@ func GetUserProfile(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Fetched user profile for ID=%d", userID)
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(profile)
 }
 
 // UpdateUserProfile allows users to update their details and membership
 func UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"] // Extract user ID from URL
-	var updates struct {
-		Name string `json:"name"`
-		Role string `json:"role"`
+	// Validate if ID is numeric
+	userID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Printf("Invalid user ID: %s", id)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid user ID"})
+		return
 	}
-
-	// Decode the request body
-	if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
+	// Decode the JSON payload
+	var updatedProfile models.UserProfile
+	if err := json.NewDecoder(r.Body).Decode(&updatedProfile); err != nil {
 		log.Printf("Error decoding request body: %v", err)
-		http.Error(w, "Invalid input", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request payload"})
 		return
 	}
 
-	// Map role to membership_tier_id
-	var membershipTierID int
-	err := database.DB.QueryRow("SELECT id FROM membership_tiers WHERE name = ?", updates.Role).Scan(&membershipTierID)
+	// Validate input fields (e.g., ensure no empty fields)
+	if updatedProfile.Name == "" || updatedProfile.Email == "" {
+		log.Println("Name or Email cannot be empty")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Name and Email are required"})
+		return
+	}
+	// Update the `users` table
+	userQuery := `
+		UPDATE users 
+		SET email = ?, name = ? 
+		WHERE id = ?
+	`
+	_, err = database.DB.Exec(userQuery, updatedProfile.Email, updatedProfile.Name, userID)
 	if err != nil {
-		log.Printf("Error finding membership tier ID for role %s: %v", updates.Role, err)
-		http.Error(w, "Invalid membership role", http.StatusBadRequest)
+		log.Printf("Error updating users table for ID=%d: %v", userID, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to update user information"})
 		return
 	}
 
-	// Update user details in the database
-	query := "UPDATE users SET name = ?, role = ?, membership_tier_id = ? WHERE id = ?"
-	_, err = database.DB.Exec(query, updates.Name, updates.Role, membershipTierID, id)
+	// Update the `user_details` table
+	detailsQuery := `
+		UPDATE user_details 
+		SET age = ?, gender = ?, address = ?, phone_number = ? 
+		WHERE user_id = ?
+	`
+	_, err = database.DB.Exec(detailsQuery, updatedProfile.Age, updatedProfile.Gender, updatedProfile.Address, updatedProfile.PhoneNumber, userID)
 	if err != nil {
-		log.Printf("Error updating user profile: %v", err)
-		http.Error(w, "Failed to update user profile", http.StatusInternalServerError)
+		log.Printf("Error updating user_details table for user_id=%d: %v", userID, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to update user details"})
 		return
 	}
 
-	log.Printf("Updated user ID=%s: Name=%s, Role=%s, MembershipTierID=%d", id, updates.Name, updates.Role, membershipTierID)
+	log.Printf("Updated user ID=%s: Name=%s, Age=%d", id, updatedProfile.Name, updatedProfile.Age)
+	// Return success response
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Profile updated successfully"})
+	json.NewEncoder(w).Encode(map[string]string{"message": "User profile updated successfully"})
 }
 
 func GetMembershipTiers(w http.ResponseWriter, r *http.Request) {
