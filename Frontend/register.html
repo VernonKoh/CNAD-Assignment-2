@@ -23,24 +23,8 @@
             margin: auto;
         }
 
-        .form-instructions {
-            font-size: 0.9rem;
-            color: #6c757d;
-            text-align: center;
-            margin-top: 1rem;
-        }
-
         .form-group {
             margin-bottom: 15px;
-        }
-
-        .faceio-btn {
-            background-color: #20c997;
-            color: white;
-        }
-
-        .faceio-btn:hover {
-            background-color: #17a589;
         }
 
         .form-button {
@@ -53,7 +37,7 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#">Uler</a>
+            <a class="navbar-brand" href="#">LionBefrienders</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -89,19 +73,8 @@
             <button type="submit" class="btn btn-primary w-100">Register</button>
         </form>
         <p id="message" class="text-danger mt-3"></p>
-
-        <!-- FaceIO Enrollment -->
-        <div class="text-center mt-4">
-            <button class="btn w-100 faceio-btn" onclick="enrollNewUser()">Set Up Facial Recognition</button>
-            <p class="form-instructions">
-                Click "Set Up Facial Recognition" to register your face with FaceIO. This will allow you to log in securely using your face in the future.
-            </p>
-        </div>
     </div>
 
-    <!-- FaceIO Integration -->
-    <div id="faceio-modal"></div>
-    <script src="https://cdn.faceio.net/fio.js"></script>
     <script>
         // Register Form Submission
         document.getElementById('registerForm').addEventListener('submit', async function (e) {
@@ -121,7 +94,7 @@
                 const data = await response.json();
                 if (response.ok) {
                     alert('Registration successful! Please verify your email.');
-                    window.location.href = '/login.html';
+                    window.location.href = '/login.html'; // Redirect to login
                 } else {
                     document.getElementById('message').innerText = data.error || 'Registration failed.';
                 }
@@ -130,33 +103,6 @@
                 document.getElementById('message').innerText = 'An error occurred. Please try again.';
             }
         });
-
-        // FaceIO Enrollment
-        const faceio = new faceIO("fioaf90f");
-
-        function enrollNewUser() {
-            const email = document.getElementById("email")?.value;
-
-            if (!email) {
-                alert("Please enter an email before enrolling!");
-                return;
-            }
-
-            const uniqueWhoami = `${email}-${Date.now()}`;
-
-            faceio.enroll({
-                locale: "auto",
-                payload: { whoami: uniqueWhoami, email: email },
-            }).then(userInfo => {
-                alert(`Enrollment successful! 
-                       Facial ID: ${userInfo.facialId}
-                       Email: ${email}`);
-                console.log("Enrollment Info:", userInfo);
-            }).catch(errCode => {
-                console.error("Enrollment failed with error code:", errCode);
-                alert(`Enrollment failed. Error code: ${errCode}`);
-            });
-        }
     </script>
 </body>
 

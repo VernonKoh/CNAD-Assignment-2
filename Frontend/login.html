@@ -23,36 +23,19 @@
             border-radius: 12px;
             background: #ffffff;
         }
-        
-        /* Login Button Styling */
-    .login-btn {
-        background-color: #02924a; /* Green */
-        color: white;
-        margin-top: 10px;
-    }
 
-    .login-btn:hover {
-        background-color: #01702c; /* Darker green for hover */
-    }
-
-    /* Updated FaceIO Button Styling */
-    .faceio-btn {
-        background-color: #20c997; /* Teal */
-        color: white;
-    }
-
-    .faceio-btn:hover {
-        background-color: #17a589; /* Darker teal for hover */
-    }
-
-        .form-button {
-            margin-top: 10px;
+        .form-group {
+            margin-bottom: 15px;
         }
 
-        /* Add Spacing Between Fields */
-    .form-group {
-        margin-bottom: 15px; /* Space between email/password fields */
-    }
+        .faceio-btn {
+            background-color: #20c997;
+            color: white;
+        }
+
+        .faceio-btn:hover {
+            background-color: #17a589;
+        }
     </style>
 </head>
 
@@ -60,7 +43,7 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#">Uler</a>
+            <a class="navbar-brand" href="#">LionBefrienders</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -69,107 +52,109 @@
                     <li class="nav-item">
                         <a class="nav-link" href="index.html">Home</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="register.html">Register</a>
+                    </li>
                 </ul>
             </div>
         </div>
     </nav>
 
     <!-- Login Form -->
-<div class="login mt-5">
-    <h1 class="text-center">Login</h1>
-    <form id="loginForm">
-        <div class="form-group">
-            <label for="email">Email</label>
-            <input type="email" id="email" class="form-control" placeholder="Enter your email" required />
-        </div>
-        <div class="form-group">
-            <label for="password">Password</label>
-            <input type="password" id="password" class="form-control" placeholder="Enter your password" required />
-        </div>
-        <!-- Login Button -->
-        <button type="submit" class="btn w-100 login-btn">Login</button>
+    <div class="login mt-5">
+        <h1 class="text-center">Login</h1>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" class="form-control" placeholder="Enter your email" required />
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" class="form-control" placeholder="Enter your password" required />
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Login</button>
+        </form>
+        <p id="message" class="text-danger mt-3"></p>
 
-        <!-- Updated FaceIO Button -->
-        <button type="button" class="btn w-100 faceio-btn mt-2" onclick="authenticateUser()">Authenticate with FACEIO</button>
-    </form>
-    <p id="message" class="text-danger mt-3"></p>
-</div>
+        <!-- FaceIO Authentication Button -->
+        <div class="text-center mt-4">
+            <button class="btn w-100 faceio-btn" onclick="authenticateUser()">Authenticate with Facial Recognition</button>
+        </div>
+    </div>
 
+    <div id="faceio-modal"></div>
+    <script src="https://cdn.faceio.net/fio.js"></script>
     <script>
+        const faceio = new faceIO("fioaf90f"); // Replace with your public ID
+
+        // Login with Email and Password
         document.getElementById('loginForm').addEventListener('submit', async function (e) {
-            e.preventDefault();
+            e.preventDefault(); // Prevent page reload
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
             try {
                 const response = await fetch('http://localhost:8081/api/v1/users/login', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password }),
                 });
 
                 const data = await response.json();
                 if (response.ok) {
-                    console.log("Login response:", data); // Log the server response for debugging
-
-                    // Save user data to localStorage
-                    localStorage.setItem('userID', data.userID); // Save user ID
-                    localStorage.setItem('userName', data.name); // Save user's name
-                    localStorage.setItem('jwtToken', data.token); // Save JWT token
-
-                    // Verify the data was saved to localStorage
-                    console.log("LocalStorage values set:");
-                    console.log("UserID:", localStorage.getItem('userID'));
-                    console.log("UserName:", localStorage.getItem('userName'));
-                    console.log("JWT Token:", localStorage.getItem('jwtToken'));
+                    // Save login details to localStorage
+                    localStorage.setItem('userID', data.userID);
+                    localStorage.setItem('userName', data.name);
+                    localStorage.setItem('jwtToken', data.token);
 
                     alert(`Login successful! Welcome, ${data.name}`);
                     window.location.href = 'welcome.html'; // Redirect to welcome page
                 } else {
-                    document.getElementById('message').innerText = data.error || 'Login failed';
+                    document.getElementById('message').innerText = data.error || 'Login failed.';
                 }
             } catch (error) {
+                console.error('Error during login:', error);
                 document.getElementById('message').innerText = 'An error occurred. Please try again.';
             }
         });
-    </script>
 
-    <!-- FaceIO Authentication -->
-    <div id="faceio-modal"></div>
-    <script src="https://cdn.faceio.net/fio.js"></script>
-    <script>
-        // Instantiate fio.js with your application Public ID
-        const faceio = new faceIO("fioaf90f");
+        // Authenticate with Facial Recognition
+function authenticateUser() {
+    faceio.authenticate({
+        locale: "auto",
+    }).then(userData => {
+        console.log("Authentication successful:", userData);
 
-        function authenticateUser() {
-            faceio.authenticate({
-                locale: "auto", // Default locale
-            }).then(userData => {
-                console.log("Authentication successful:", userData);
+        // Save the authenticated user's details in localStorage
+        const userID = userData.payload.userID || "unknown-user"; // Ensure a fallback
+        const email = userData.payload.email || "unknown-email"; // Ensure a fallback
 
-                // Save authenticated user details in localStorage
-                localStorage.setItem('userName', userData.payload.email); // Replace 'email' with your payload field
-                localStorage.setItem('jwtToken', "mock-jwt-token-for-authentication"); // Mock token (or retrieve from server)
-                
-                alert(`Welcome back, ${userData.payload.email}!`);
-                window.location.href = "welcome.html"; // Redirect to the welcome page
-            }).catch(errCode => {
-                console.error("Authentication failed with error code:", errCode);
+        // Mock JWT Token - Replace this if your server provides a token during FaceIO login
+        const jwtToken = "mock-jwt-token-for-authentication";
 
-                switch (errCode) {
-                    case fioErrCode.NO_FACE_DETECTED:
-                        alert("No face detected. Please ensure your face is visible to the camera.");
-                        break;
-                    case fioErrCode.FACE_MISMATCH:
-                        alert("Face mismatch. Please ensure you are using the enrolled face.");
-                        break;
-                    default:
-                        alert(`Authentication failed with error code: ${errCode}`);
-                }
-            });
+        // Save data to localStorage for session persistence
+        localStorage.setItem('userID', userID);
+        localStorage.setItem('userName', email); // Assuming payload includes 'email'
+        localStorage.setItem('jwtToken', jwtToken);
+
+        alert(`Welcome back, ${email}!`);
+        window.location.href = 'welcome.html'; // Redirect to the welcome page
+    }).catch(errCode => {
+        console.error('Authentication failed:', errCode);
+
+        // Display user-friendly error messages
+        switch (errCode) {
+            case fioErrCode.NO_FACE_DETECTED:
+                alert("No face detected. Please ensure your face is visible to the camera.");
+                break;
+            case fioErrCode.FACE_MISMATCH:
+                alert("Face mismatch. Please ensure you are using the enrolled face.");
+                break;
+            default:
+                alert(`Authentication failed. Error code: ${errCode}`);
         }
+    });
+}
     </script>
 </body>
 

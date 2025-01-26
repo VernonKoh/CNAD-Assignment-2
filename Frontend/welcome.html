@@ -689,6 +689,23 @@
     }
 
 }
+
+.custom-blue-btn {
+        background-color: #007bff; /* Your desired blue */
+        border-color: #007bff;
+        color: white;
+    }
+
+    .custom-blue-btn:hover {
+        background-color: #0056b3; /* Darker blue for hover effect */
+        border-color: #0056b3;
+    }
+
+    .custom-blue-btn:focus,
+    .custom-blue-btn:active {
+        box-shadow: none; /* Remove focus outline if you don't like it */
+    }
+
     </style>
 </head>
 <body>
@@ -696,19 +713,94 @@
     <!-- Navbar Container -->
     <div id="navbar-container"></div> <!-- The navbar will be injected here -->
 
+<!-- Welcome Section -->
+<section class="home" id="home">
+    <div class="home-text">
+        <h1 id="userName">Hello, User!</h1>
+        <h1><b>Welcome to LionBefrienders</b></h1>
+        <h4><i>Your trusted companion</i></h4>
 
-    <section class="home" id="home">
-        <div class="home-text">
-            <h1 id="userName"></h1>
-            <h1> <b> Welcome to LionBefrienders </b></h1>
-            <h4><i> OLD PEOPLE LISTEN UP</i></h4>
-            <div class="login-register">
-                <a href="/bookings.html" class="btn btn-primary btn-lg">Book Now!</a>
+        <!-- Buttons Container -->
+        <div class="btn-container">
+            <a href="/bookings.html" class="btn btn-primary">Book Now!</a>
+            <button class="btn custom-blue-btn" onclick="setupFacialRecognition()">Set Up Facial Recognition</button>
 
-            </div>
         </div>
+    </div>
+</section>
+<!-- Scripts -->
+<script src="https://cdn.faceio.net/fio.js"></script>
+<script>
+    loadNavbar(); // Load navbar dynamically
 
-    </section>
+    const userName = localStorage.getItem('userName');
+    const userID = localStorage.getItem('userID');
+    const jwtToken = localStorage.getItem('jwtToken');
+
+    if (userName && jwtToken) {
+        document.getElementById('userName').textContent = `Hello, ${userName}!`;
+    } else {
+        alert('User not logged in!');
+        localStorage.clear(); // Clear invalid data
+        window.location.href = "login.html";
+    }
+
+// Dynamically load the navbar
+async function loadNavbar() {
+            try {
+                const response = await fetch('navbar.html');
+                const navbarHTML = await response.text();
+                document.getElementById('navbar-container').innerHTML = navbarHTML;
+            } catch (error) {
+                console.error('Failed to load navbar:', error);
+            }
+        }
+
+        const faceio = new faceIO("fioaf90f"); // Replace with your FaceIO public ID
+
+        async function updateFacialId(userID, facialId) {
+    try {
+        const response = await fetch('http://localhost:8081/api/v1/users/update-facial-id', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userID, facialID: facialId })
+        });
+        const data = await response.json();
+        console.log("Facial ID updated successfully:", data);
+    } catch (error) {
+        console.error("Error updating facial ID:", error);
+    }
+}
+        function setupFacialRecognition() {
+            if (event) event.preventDefault(); // Prevent button's default behavior
+
+            if (!userID) {
+                alert("Please log in to set up facial recognition.");
+                return;
+            }
+
+            faceio.enroll({
+                locale: "auto",
+                payload: { userID },
+            }).then(userInfo => {
+                alert(`Facial Recognition Set Up Successfully! 
+                       Facial ID: ${userInfo.facialId}`);
+                // Update the facial ID in the database via backend API
+                fetch('http://localhost:8081/api/v1/users/update-facial-id', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userID, facialID: userInfo.facialId }),
+                }).then(response => response.json()).then(data => {
+                    console.log("Facial ID updated successfully:", data);
+                }).catch(err => {
+                    console.error("Error updating facial ID:", err);
+                });
+            }).catch(errCode => {
+                console.error("Facial recognition setup failed:", errCode);
+                alert(`Error: ${errCode}`);
+            });
+        }
+    </script>
 
     <section class="about" id="about">
         <h1 class="heading"> <span> About </span> Us </h1>
@@ -822,24 +914,6 @@
     <script>
         loadNavbar();  // Load navbar dynamically
     
-        // Retrieve localStorage values
-        const userName = localStorage.getItem('userName');
-        const userID = localStorage.getItem('userID');
-        const jwtToken = localStorage.getItem('jwtToken');
-    
-        // Debugging: Log retrieved values
-        console.log("LocalStorage Debugging:");
-console.log("UserName:", localStorage.getItem('userName'));
-console.log("JWT Token:", localStorage.getItem('jwtToken'));
-
-// Check login status
-if (localStorage.getItem('userName') && localStorage.getItem('jwtToken')) {
-    document.getElementById('userName').textContent = `Hello, ${localStorage.getItem('userName')}!`;
-} else {
-    alert('User not logged in!');
-    localStorage.clear(); // Clear invalid data
-    window.location.href = "login.html";
-}
 
     
         // Check if user is logged in
