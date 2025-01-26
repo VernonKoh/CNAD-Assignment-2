@@ -2,6 +2,7 @@ package main
 
 import (
 	"CNAD_Assignment_2/user-service/database"
+	"CNAD_Assignment_2/user-service/notification"
 	"CNAD_Assignment_2/user-service/routes"
 	"fmt"
 	"log"
@@ -13,6 +14,11 @@ import (
 func main() {
 	// Initialize the database
 	database.InitDB()
+
+	// Call the notification function
+	notification.NotifyUsers()
+
+	log.Println("Application has finished processing notifications.")
 
 	// Create a new router
 	r := mux.NewRouter()

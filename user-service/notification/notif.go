@@ -1,14 +1,17 @@
 package notification
 
 import (
+	"fmt"
 	"log"
 	"net/smtp"
 	"os"
 
+	"CNAD_Assignment_2/user-service/database"
+
 	"github.com/joho/godotenv" // Import for loading .env files
 )
 
-func main() {
+func NotifyUsers() {
 	// Load environment variables from .env
 	err := godotenv.Load()
 	if err != nil {
@@ -27,57 +30,79 @@ func main() {
 	smtpPort := "587"
 	auth := smtp.PlainAuth("", smtpUser, smtpPass, smtpHost)
 
-	// Example email details
-	email := "curtislee1028@gmail.com" // Replace with a valid email
-	subject := "Test Email"
-	body := "This is a test email to verify the email functionality."
-
-	// Compose the email
-	message := []byte("From: " + smtpUser + "\r\n" +
-		"To: " + email + "\r\n" +
-		"Subject: " + subject + "\r\n\r\n" +
-		body + "\r\n")
-
-	// Send the email
-	err = smtp.SendMail(smtpHost+":"+smtpPort, auth, smtpUser, []string{email}, message)
-	if err != nil {
-		log.Printf("Failed to send email: %v", err)
-	} else {
-		log.Printf("Email sent successfully to %s", email)
+	// Ensure database is initialized
+	if database.DB == nil {
+		log.Fatal("Database connection is not initialized. Call InitDB first.")
 	}
 
-	// Commented out database-related sections
-	/*
-		// Database connection (replace with your MySQL DSN)
-		dsn := "your_user:your_password@tcp(localhost:3306)/your_db"
-		db, err := sql.Open("mysql", dsn)
-		if err != nil {
-			log.Fatalf("Failed to connect to database: %v", err)
-		}
-		defer db.Close()
+	// High-Risk Alerts
+	queryHighRisk := `
+		SELECT u.email, a.risk_level, a.assessment_date
+		FROM assessments a
+		JOIN users u ON a.user_id = u.id
+		WHERE a.risk_level = 'High'
+	`
+	rows, err := database.DB.Query(queryHighRisk)
+	if err != nil {
+		log.Fatalf("Failed to query database for high-risk users: %v", err)
+	}
+	defer rows.Close()
 
-		// Query seniors with upcoming check-ups (7-30 days from today)
+	// Send high-risk alerts
+	for rows.Next() {
+		var email string
+		var riskLevel string
+		var assessmentDate string
+
+		if err := rows.Scan(&email, &riskLevel, &assessmentDate); err != nil {
+			log.Printf("Failed to scan row: %v", err)
+			continue
+		}
+
+		subject := "Health Alert: High Risk Level Detected"
+		body := fmt.Sprintf("Dear Senior,\n\nYour recent health assessment on %s flagged your risk level as 'High'. We recommend consulting a clinic for further evaluation.\n\nBest regards,\nHealthCare Team", assessmentDate)
+
+		message := []byte("From: " + smtpUser + "\r\n" +
+			"To: " + email + "\r\n" +
+			"Subject: " + subject + "\r\n\r\n" +
+			body + "\r\n")
+
+		err := smtp.SendMail(smtpHost+":"+smtpPort, auth, smtpUser, []string{email}, message)
+		if err != nil {
+			log.Printf("Failed to send email to %s: %v", email, err)
+		} else {
+			log.Printf("Alert sent to %s for high risk level on %s", email, assessmentDate)
+
+			// Testing Log: Print email sent details
+			fmt.Printf("TEST LOG: Email sent successfully to %s with subject: %s\n", email, subject)
+		}
+	}
+
+	log.Println("All high-risk alerts processed.")
+
+	// Check-Up Reminders (Commented Out)
+	/*
 		now := time.Now()
 		sevenDaysLater := now.AddDate(0, 0, 7).Format("2006-01-02")
 		thirtyDaysLater := now.AddDate(0, 0, 30).Format("2006-01-02")
 
-		query := `
+		queryCheckups := `
 			SELECT email, next_checkup_date
 			FROM checkup_schedules
 			WHERE next_checkup_date BETWEEN ? AND ?
 		`
-		rows, err := db.Query(query, sevenDaysLater, thirtyDaysLater)
+		rowsCheckups, err := database.DB.Query(queryCheckups, sevenDaysLater, thirtyDaysLater)
 		if err != nil {
-			log.Fatalf("Failed to query database: %v", err)
+			log.Fatalf("Failed to query database for check-up reminders: %v", err)
 		}
-		defer rows.Close()
+		defer rowsCheckups.Close()
 
-		// Email sending loop (commented out for now)
-		for rows.Next() {
+		// Send check-up reminders
+		for rowsCheckups.Next() {
 			var email string
 			var checkupDate string
 
-			if err := rows.Scan(&email, &checkupDate); err != nil {
+			if err := rowsCheckups.Scan(&email, &checkupDate); err != nil {
 				log.Printf("Failed to scan row: %v", err)
 				continue
 			}
@@ -95,9 +120,12 @@ func main() {
 				log.Printf("Failed to send email to %s: %v", email, err)
 			} else {
 				log.Printf("Reminder sent to %s for check-up on %s", email, checkupDate)
+
+				// Testing Log: Print email sent details
+				fmt.Printf("TEST LOG: Email sent successfully to %s with subject: %s\n", email, subject)
 			}
 		}
 
-		log.Println("All reminders processed.")
+		log.Println("All check-up reminders processed.")
 	*/
 }
