@@ -4,7 +4,7 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <title>Register User - Uler</title>
+    <title>Register User - LionBefrienders</title>
     <style>
         body {
             height: 100vh;
@@ -22,6 +22,33 @@
             background: #ffffff;
             margin: auto;
         }
+
+        .form-instructions {
+            font-size: 0.9rem;
+            color: #6c757d; /* Bootstrap gray text color */
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+            /* Add Spacing Between Fields */
+    .form-group {
+        margin-bottom: 15px; /* Space between email/password fields */
+    }
+
+    /* Updated FaceIO Button Styling */
+    .faceio-btn {
+        background-color: #20c997; /* teal */
+        color: white;
+    }
+
+    .faceio-btn:hover {
+        background-color: #17a589; /* Darker teal for hover */
+    }
+
+        .form-button {
+            margin-top: 10px;
+        }
+
     </style>
 </head>
 
@@ -65,41 +92,19 @@
             <button type="submit" class="btn btn-primary w-100">Register</button>
         </form>
         <p id="message" class="text-danger mt-3"></p>
+
+        <!-- FaceIO Enrollment -->
+<div class="text-center mt-4">
+    <button class="btn w-100 faceio-btn" onclick="enrollNewUser()">Set Up Facial Recognition</button>
+
+    <p class="form-instructions">
+        Click "Set Up Facial Recognition" to register your face with FaceIO. This will allow you to log in securely using your face in the future.
+    </p>
+</div>
+
     </div>
 
-    <script>
-        document.getElementById('registerForm').addEventListener('submit', async function (e) {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const name = document.getElementById('name').value;
-
-            try {
-                const response = await fetch('http://localhost:8081/api/v1/users/register', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ email, password, name, role: "Basic" }),
-                });
-
-                const data = await response.json();
-                if (response.ok) {
-                    alert('Registration successful! Please verify your email.');
-                    window.location.href = '/login.html'; // Redirect to login page
-                } else {
-                    document.getElementById('message').innerText = data.error || 'Registration failed';
-                }
-            } catch (error) {
-                document.getElementById('message').innerText = 'An error occurred. Please try again.';
-            }
-        });
-    </script>
-
-    <!-- FaceIO Enrollment -->
-    <div class="text-center mt-4">
-        <button class="btn btn-secondary" onclick="enrollNewUser()">Enroll New User</button>
-    </div>
+    <!-- FaceIO Integration -->
     <div id="faceio-modal"></div>
     <script src="https://cdn.faceio.net/fio.js"></script>
     <script>
@@ -107,36 +112,34 @@
         const faceio = new faceIO("fioaf90f");
 
         function enrollNewUser() {
-    const email = document.getElementById("email")?.value; // Get email from input field
+            const email = document.getElementById("email")?.value; // Get email from input field
 
-    if (!email) {
-        alert("Please enter an email before enrolling!");
-        return;
-    }
+            if (!email) {
+                alert("Please enter an email before enrolling!");
+                return;
+            }
 
-    // Generate a unique identifier to avoid enrollment conflicts
-    const uniqueWhoami = `${email}-${Date.now()}`;
+            // Generate a unique identifier to avoid enrollment conflicts
+            const uniqueWhoami = `${email}-${Date.now()}`;
 
-    faceio.enroll({
-        locale: "auto", // Automatically detect the user's locale
-        payload: {
-            whoami: uniqueWhoami, // Unique identifier for each enrollment
-            email: email,         // Include the user's email for clarity
-        },
-    }).then(userInfo => {
-        // Enrollment successful
-        alert(`Enrollment successful! 
-               Facial ID: ${userInfo.facialId}
-               Email: ${email}`);
-        console.log("Enrollment Info:", userInfo);
-    }).catch(errCode => {
-        // Handle enrollment failure
-        console.error("Enrollment failed with error code:", errCode);
-        alert(`Enrollment failed. Error code: ${errCode}`);
-    });
-}
-
-
+            faceio.enroll({
+                locale: "auto", // Automatically detect the user's locale
+                payload: {
+                    whoami: uniqueWhoami, // Unique identifier for each enrollment
+                    email: email,         // Include the user's email for clarity
+                },
+            }).then(userInfo => {
+                // Enrollment successful
+                alert(`Enrollment successful! 
+                       Facial ID: ${userInfo.facialId}
+                       Email: ${email}`);
+                console.log("Enrollment Info:", userInfo);
+            }).catch(errCode => {
+                // Handle enrollment failure
+                console.error("Enrollment failed with error code:", errCode);
+                alert(`Enrollment failed. Error code: ${errCode}`);
+            });
+        }
     </script>
 </body>
 
