@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Posture Check</title>
+</head>
+<body>
+    <h1>Posture analysis</h1>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" name="image" id="file" accept="image/*, video/*" required>
+        <button type="submit">Upload</button>
+    </form>
+
+    <h2>Processed Image:</h2>
+    <img id="processedImage" style="max-width: 100%; border: 2px solid black;" />
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData();
+            const fileInput = document.getElementById('file');
+            formData.append('image', fileInput.files[0]);
+
+            try {
+                const response = await fetch('/api/v1/assessment/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const imageUrl = URL.createObjectURL(blob);
+                    document.getElementById('processedImage').src = imageUrl;
+                } else {
+                    const errorText = await response.text();
+                    console.error('Server error:', errorText);
+                    alert('Error processing file: ' + errorText);
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                alert('Error processing file: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>
