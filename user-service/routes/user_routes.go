@@ -13,8 +13,8 @@ func RegisterUserRoutes(router *mux.Router) {
 	userRouter.HandleFunc("/login", handlers.LoginUser).Methods("POST")
 	userRouter.HandleFunc("/verify", handlers.VerifyUser).Methods("GET") // Add this route for verification
 
-	userRouter.HandleFunc("/user_profile/{id}", handlers.GetUserProfile).Methods("GET")
-	userRouter.HandleFunc("/user_profile/{id}", handlers.UpdateUserProfile).Methods("PUT")
+	// Add doctor login route
+	userRouter.HandleFunc("/doctor/login", handlers.DoctorLogin).Methods("POST")
 
 }
 

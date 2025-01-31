@@ -52,3 +52,20 @@ CREATE TABLE IF NOT EXISTS assessments (
     notes TEXT,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+
+-- Create table for storing doctor accounts separately
+CREATE TABLE IF NOT EXISTS doctors (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    license_number VARCHAR(50) UNIQUE NOT NULL,
+    hospital VARCHAR(255) NOT NULL,
+    is_verified BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insert a sample doctor profile
+INSERT INTO doctors (email, password, name, license_number, hospital, is_verified) 
+VALUES ('doctor@example.com', 'doctor123', 'Dr. John Doe', 'DOC123456', 'General Hospital', TRUE);
