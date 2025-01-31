@@ -12,6 +12,9 @@
         <button type="submit">Upload</button>
     </form>
 
+    <h2>Posture Analysis:</h2>
+    <pre id="analysisResults"></pre>
+
     <h2>Processed Image:</h2>
     <img id="processedImage" style="max-width: 100%; border: 2px solid black;" />
 
@@ -29,18 +32,11 @@
                     body: formData,
                 });
 
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const imageUrl = URL.createObjectURL(blob);
-                    document.getElementById('processedImage').src = imageUrl;
-                } else {
-                    const errorText = await response.text();
-                    console.error('Server error:', errorText);
-                    alert('Error processing file: ' + errorText);
-                }
+                const data = await response.json();
+                document.getElementById('analysisResults').textContent = JSON.stringify(data.analysis, null, 2);
+                document.getElementById('processedImage').src = data.image_url;
             } catch (error) {
-                console.error('Fetch error:', error);
-                alert('Error processing file: ' + error.message);
+                console.error('Error:', error);
             }
         });
     </script>

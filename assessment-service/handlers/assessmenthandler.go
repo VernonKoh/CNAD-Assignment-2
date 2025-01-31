@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -11,7 +12,8 @@ import (
 )
 
 const (
-	mediapipeAPIURL = "http://127.0.0.1:5000/pose" // URL of the Python MediaPipe API
+	mediapipeAPIURL   = "http://127.0.0.1:5000/pose"
+	mediapipeImageURL = "http://127.0.0.1:5000/processed-image"
 )
 
 // UploadHandler handles file uploads and forwards them to the MediaPipe API
@@ -55,9 +57,28 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer response.Body.Close()
 
-	// ✅ Return image response
-	w.Header().Set("Content-Type", "image/jpeg")
-	io.Copy(w, response.Body)
+	// ✅ Read JSON response from Python
+	var analysisData map[string]interface{}
+	err = json.NewDecoder(response.Body).Decode(&analysisData)
+	if err != nil {
+		http.Error(w, "Failed to read posture analysis data", http.StatusInternalServerError)
+		return
+	}
+
+	// ✅ Fetch processed image from Python API
+	imageResp, err := http.Get(mediapipeImageURL)
+	if err != nil {
+		http.Error(w, "Failed to retrieve processed image", http.StatusInternalServerError)
+		return
+	}
+	defer imageResp.Body.Close()
+
+	// ✅ Set response headers
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"analysis":  analysisData["analysis"],
+		"image_url": mediapipeImageURL,
+	})
 }
 
 // sendToMediaPipeAPI forwards the file to the Python MediaPipe API
@@ -90,10 +111,5 @@ func sendToMediaPipeAPI(filePath string) (*http.Response, error) {
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("error sending request to MediaPipe API: %v", err)
-	}
-
-	return resp, nil
+	return client.Do(req)
 }
