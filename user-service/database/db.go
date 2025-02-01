@@ -5,8 +5,7 @@ import (
 	"log"
 	"os"
 
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/joho/godotenv"
+	_ "github.com/go-sql-driver/mysql" // MySQL driver
 )
 
 // Global database connection
@@ -14,25 +13,24 @@ var DB *sql.DB
 
 // InitDB initializes the database connection
 func InitDB() {
-	// Load environment variables from .env file
-	err := godotenv.Load() // No need for a specific path since it's in user-service/
-	if err != nil {
-		log.Println("⚠️ Warning: .env file not found, using default values")
-	}
+	var err error
 
-	// Get credentials from .env or use default values
+	// Read MySQL credentials from environment variables, fallback to default values
 	mysqlUser := os.Getenv("MYSQL_USER")
 	if mysqlUser == "" {
 		mysqlUser = "root"
 	}
+
 	mysqlPassword := os.Getenv("MYSQL_PASS")
 	if mysqlPassword == "" {
-		mysqlPassword = "yourpassword"
+		mysqlPassword = "yourpassword" // Default password for others
 	}
+
 	mysqlHost := os.Getenv("MYSQL_HOST")
 	if mysqlHost == "" {
 		mysqlHost = "127.0.0.1"
 	}
+
 	mysqlDatabase := os.Getenv("MYSQL_DBNAME")
 	if mysqlDatabase == "" {
 		mysqlDatabase = "elderly"
@@ -41,13 +39,12 @@ func InitDB() {
 	// Construct DSN (Database Source Name)
 	dsn := mysqlUser + ":" + mysqlPassword + "@tcp(" + mysqlHost + ":3306)/" + mysqlDatabase
 
-	// Open database connection
 	DB, err = sql.Open("mysql", dsn)
 	if err != nil {
 		log.Fatalf("❌ Failed to connect to the database: %v", err)
 	}
 
-	// Verify the connection
+	// Verify connection
 	if err = DB.Ping(); err != nil {
 		log.Fatalf("❌ Database connection error: %v", err)
 	}
@@ -59,3 +56,10 @@ func InitDB() {
 func GetDB() *sql.DB {
 	return DB
 }
+
+// run this in cmd before starting go app (set up environment variables)
+// set MYSQL_USER=root
+// set MYSQL_PASS=yourpassword  # Replace with your own MySQL password
+// set MYSQL_HOST=127.0.0.1
+// set MYSQL_DBNAME=elderly
+// go run main.go
