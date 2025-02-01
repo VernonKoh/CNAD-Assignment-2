@@ -756,7 +756,7 @@ async function loadNavbar() {
             }
         }
 
-        const faceio = new faceIO("fioaf90f"); // Replace with your FaceIO public ID
+        const faceio = new faceIO("fioab6ed"); // Replace with your FaceIO public ID
 
         async function updateFacialId(userID, facialId) {
     try {
@@ -771,35 +771,47 @@ async function loadNavbar() {
         console.error("Error updating facial ID:", error);
     }
 }
-        function setupFacialRecognition() {
-            if (event) event.preventDefault(); // Prevent button's default behavior
 
-            if (!userID) {
-                alert("Please log in to set up facial recognition.");
-                return;
-            }
+async function setupFacialRecognition(event) {
+    if (event) event.preventDefault();
 
-            faceio.enroll({
-                locale: "auto",
-                payload: { userID },
-            }).then(userInfo => {
-                alert(`Facial Recognition Set Up Successfully! 
-                       Facial ID: ${userInfo.facialId}`);
-                // Update the facial ID in the database via backend API
-                fetch('http://localhost:8081/api/v1/users/update-facial-id', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userID, facialID: userInfo.facialId }),
-                }).then(response => response.json()).then(data => {
-                    console.log("Facial ID updated successfully:", data);
-                }).catch(err => {
-                    console.error("Error updating facial ID:", err);
-                });
-            }).catch(errCode => {
-                console.error("Facial recognition setup failed:", errCode);
-                alert(`Error: ${errCode}`);
-            });
+    if (!userID) {
+        alert("Please log in to set up facial recognition.");
+        return;
+    }
+
+    try {
+        const userInfo = await faceio.enroll({
+            locale: "auto",
+            payload: { userID },
+        });
+
+        alert(`Facial Recognition Set Up Successfully! Facial ID: ${userInfo.facialId}`);
+
+        // Send Facial ID to the backend (Fix JSON formatting)
+        const response = await fetch('http://localhost:8081/api/v1/users/update-facial-id', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userID: userID, facialID: userInfo.facialId }) // Ensure JSON format
+        });
+
+        // 🛠️ FIX: Avoid reading response twice
+        if (!response.ok) {
+            const errorData = await response.json(); // Read once
+            throw new Error(errorData.error || "Failed to save facial recognition data.");
         }
+
+        const data = await response.json(); // Read response only once
+        console.log("Facial ID updated successfully:", data);
+        alert("Your facial recognition data has been saved!");
+
+    } catch (error) {
+        console.error("Facial recognition setup failed:", error);
+        alert(`Error: ${error.message || error}`);
+    }
+}
+
+
     </script>
 
     <section class="about" id="about">
