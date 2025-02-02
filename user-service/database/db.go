@@ -3,37 +3,63 @@ package database
 import (
 	"database/sql"
 	"log"
+	"os"
 
-	_ "github.com/go-sql-driver/mysql" // Import MySQL driver to establish database connection
+	_ "github.com/go-sql-driver/mysql" // MySQL driver
 )
 
-// DB is a global variable that holds the database connection pool.
-// It is accessible throughout the application and is used to interact with the MySQL database.
+// Global database connection
 var DB *sql.DB
 
-// InitDB initializes the database connection.
-// This function establishes a connection to the MySQL database and verifies the connection.
-// It is called during the application's startup to ensure that the database is available for use.
+// InitDB initializes the database connection
 func InitDB() {
 	var err error
 
-	// Attempt to open a connection to the MySQL database.
-	// The connection string format is "username:password@tcp(host:port)/database_name".
-	// Replace "user:password" with actual credentials, "127.0.0.1:3306" with the MySQL server's address and port,
-	// and "car_sharing" with the actual database name.
-	DB, err = sql.Open("mysql", "user:password@tcp(127.0.0.1:3306)/elderly")
+	// Read MySQL credentials from environment variables, fallback to default values
+	mysqlUser := os.Getenv("MYSQL_USER")
+	if mysqlUser == "" {
+		mysqlUser = "root"
+	}
+
+	mysqlPassword := os.Getenv("MYSQL_PASS")
+	if mysqlPassword == "" {
+		mysqlPassword = "yourpassword" // Default password for others
+	}
+
+	mysqlHost := os.Getenv("MYSQL_HOST")
+	if mysqlHost == "" {
+		mysqlHost = "127.0.0.1"
+	}
+
+	mysqlDatabase := os.Getenv("MYSQL_DBNAME")
+	if mysqlDatabase == "" {
+		mysqlDatabase = "elderly"
+	}
+
+	// Construct DSN (Database Source Name)
+	dsn := mysqlUser + ":" + mysqlPassword + "@tcp(" + mysqlHost + ":3306)/" + mysqlDatabase
+
+	DB, err = sql.Open("mysql", dsn)
 	if err != nil {
-		// If an error occurs while opening the connection, log the error and terminate the application.
-		log.Fatalf("Failed to connect to the database: %v", err)
+		log.Fatalf("❌ Failed to connect to the database: %v", err)
 	}
 
-	// Verify the connection by attempting to ping the database.
-	// If the database is unreachable or the connection is invalid, this will return an error.
+	// Verify connection
 	if err = DB.Ping(); err != nil {
-		// If an error occurs during the ping operation, log the error and terminate the application.
-		log.Fatalf("Database connection error: %v", err)
+		log.Fatalf("❌ Database connection error: %v", err)
 	}
 
-	// If the connection is successful, log a message indicating that the database has been connected.
-	log.Println("Database connected successfully")
+	log.Println("✅ Database connected successfully")
 }
+
+// GetDB returns the database connection instance
+func GetDB() *sql.DB {
+	return DB
+}
+
+// run this in cmd before starting go app (set up environment variables)
+// set MYSQL_USER=root
+// set MYSQL_PASS=yourpassword  # Replace with your own MySQL password
+// set MYSQL_HOST=127.0.0.1
+// set MYSQL_DBNAME=elderly
+// go run main.go

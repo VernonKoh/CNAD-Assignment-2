@@ -16,10 +16,7 @@ CREATE DATABASE IF NOT EXISTS elderly;
 -- Step 6: Select the database
 USE elderly;
 
--- Step 7: Show all records from the users table (optional, check if table exists)
-SELECT * FROM users;
-
--- Step 8: Create the users table if it doesn't exist
+-- Step 7: Create the users table if it doesn't exist
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -28,6 +25,7 @@ CREATE TABLE IF NOT EXISTS users (
     role VARCHAR(50) DEFAULT 'Basic',
     is_verified BOOLEAN DEFAULT FALSE,
     verification_token VARCHAR(255),
+    facial_id VARCHAR(255) NULL,  -- ✅ Added column for storing facial ID
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -69,3 +67,5 @@ CREATE TABLE IF NOT EXISTS doctors (
 -- Insert a sample doctor profile
 INSERT INTO doctors (email, password, name, license_number, hospital, is_verified) 
 VALUES ('doctor@example.com', 'doctor123', 'Dr. John Doe', 'DOC123456', 'General Hospital', TRUE);
+
+

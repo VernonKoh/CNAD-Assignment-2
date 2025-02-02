@@ -16,6 +16,12 @@ func RegisterUserRoutes(router *mux.Router) {
 	// Add doctor login route
 	userRouter.HandleFunc("/doctor/login", handlers.DoctorLogin).Methods("POST")
 
+	// ✅ Add route for updating Facial ID
+	userRouter.HandleFunc("/update-facial-id", handlers.UpdateFacialID).Methods("POST")
+
+	// Add the webhook route to handle FACEIO events
+	userRouter.HandleFunc("/faceio-webhook", handlers.HandleFaceIOWebhook).Methods("POST")
+
 }
 
 //get user profile
