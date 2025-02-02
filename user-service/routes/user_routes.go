@@ -19,6 +19,10 @@ func RegisterUserRoutes(router *mux.Router) {
 	// ✅ Add route for updating Facial ID
 	userRouter.HandleFunc("/update-facial-id", handlers.UpdateFacialID).Methods("POST")
 
+	userRouter.HandleFunc("/get-email-by-faceid", handlers.GetEmailByFaceID).Methods("POST")
+
+	userRouter.HandleFunc("/get-user-details", handlers.GetUserDetails).Methods("POST")
+
 	// Add the webhook route to handle FACEIO events
 	userRouter.HandleFunc("/faceio-webhook", handlers.HandleFaceIOWebhook).Methods("POST")
 

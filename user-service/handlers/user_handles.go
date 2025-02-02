@@ -4,6 +4,7 @@ import (
 	"CNAD_Assignment_2/user-service/database"
 	"CNAD_Assignment_2/user-service/models"
 	"CNAD_Assignment_2/user-service/utils"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -319,7 +320,7 @@ func UpdateFacialID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ✅ Update Facial ID in database
+	// ✅ Update Facial ID in database (Fixed Query)
 	query := "UPDATE users SET facial_id = ? WHERE id = ?"
 	_, err = database.DB.Exec(query, request.FacialID, request.UserID)
 	if err != nil {
@@ -337,7 +338,6 @@ type FaceIOWebhookPayload struct {
 	Event    string `json:"event"`
 	UserID   int    `json:"userID"`
 	FacialID string `json:"facialID"`
-	Age      int    `json:"age,omitempty"` // FACEIO provides an estimated age
 }
 
 // HandleFaceIOWebhook processes webhook events from FACEIO
@@ -347,14 +347,21 @@ func HandleFaceIOWebhook(w http.ResponseWriter, r *http.Request) {
 	// ✅ Set response content type to JSON
 	w.Header().Set("Content-Type", "application/json")
 
-	// ✅ Log the raw request body for debugging
-	body, _ := io.ReadAll(r.Body)
+	// ✅ Read and log the raw request body
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Println("❌ Error reading request body:", err)
+		http.Error(w, `{"error": "Failed to read request body"}`, http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
 	log.Println("📩 Raw Webhook Body:", string(body))
 
 	// ✅ Decode the JSON request body
-	err := json.Unmarshal(body, &payload)
+	err = json.Unmarshal(body, &payload)
 	if err != nil {
-		log.Printf("❌ Invalid webhook payload: %v", err)
+		log.Println("❌ Invalid JSON payload:", err)
 		http.Error(w, `{"error": "Invalid JSON data"}`, http.StatusBadRequest)
 		return
 	}
@@ -370,7 +377,7 @@ func HandleFaceIOWebhook(w http.ResponseWriter, r *http.Request) {
 		query := "UPDATE users SET facial_id = ? WHERE id = ?"
 		result, err := database.DB.Exec(query, payload.FacialID, payload.UserID)
 		if err != nil {
-			log.Printf("❌ SQL Error: %v", err)
+			log.Printf("❌ SQL Error updating facial ID: %v", err)
 			http.Error(w, `{"error": "Database update failed"}`, http.StatusInternalServerError)
 			return
 		}
@@ -388,8 +395,19 @@ func HandleFaceIOWebhook(w http.ResponseWriter, r *http.Request) {
 	case "faceio.authentication.success":
 		log.Println("🔹 User authenticated successfully with facial recognition:", payload.FacialID)
 
+		// ✅ Verify if facial ID exists in the database
+		var userID int
+		err := database.DB.QueryRow("SELECT id FROM users WHERE facial_id = ?", payload.FacialID).Scan(&userID)
+		if err != nil {
+			log.Printf("❌ Facial ID not found in database: %v", err)
+			http.Error(w, `{"error": "Facial ID not recognized"}`, http.StatusUnauthorized)
+			return
+		}
+
+		log.Printf("✅ User with Facial ID %s authenticated: UserID %d", payload.FacialID, userID)
+
 	case "faceio.facialid.delete":
-		log.Println("❌ Facial ID deleted for user:", payload.UserID)
+		log.Println("❌ Facial ID deletion requested for user:", payload.UserID)
 
 		// ✅ Remove Facial ID from Database
 		query := "UPDATE users SET facial_id = NULL WHERE id = ?"
@@ -417,4 +435,94 @@ func HandleFaceIOWebhook(w http.ResponseWriter, r *http.Request) {
 	// ✅ Send Success Response
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Webhook processed successfully"})
+}
+
+// GetEmailByFaceID retrieves the email associated with a given facial ID
+func GetEmailByFaceID(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var request struct {
+		FacialID string `json:"facialID"`
+	}
+
+	// ✅ Read and parse request body
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		log.Println("❌ Invalid request payload:", err)
+		http.Error(w, `{"error": "Invalid JSON format"}`, http.StatusBadRequest)
+		return
+	}
+
+	// ✅ Validate input
+	if request.FacialID == "" {
+		log.Println("❌ Missing facial ID")
+		http.Error(w, `{"error": "Facial ID is required"}`, http.StatusBadRequest)
+		return
+	}
+
+	// ✅ Query the database to get the user ID and email
+	var userID int
+	var userEmail string
+
+	query := "SELECT id, email FROM users WHERE facial_id = ?"
+	err = database.DB.QueryRow(query, request.FacialID).Scan(&userID, &userEmail)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			log.Printf("⚠️ No user found for facialID: %s", request.FacialID)
+		} else {
+			log.Printf("❌ Database error: %v", err)
+		}
+		http.Error(w, `{"error": "Facial ID not found"}`, http.StatusNotFound)
+		return
+	}
+
+	// ✅ Send back the email and user ID in JSON format
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"userID": userID,
+		"email":  userEmail,
+	})
+
+}
+
+// UserDetailsResponse struct
+type UserDetailsResponse struct {
+	UserID int    `json:"userID"`
+	Name   string `json:"name"`
+	Email  string `json:"email"`
+	Token  string `json:"token"`
+}
+
+// GetUserDetails returns user details based on email
+func GetUserDetails(w http.ResponseWriter, r *http.Request) {
+	var request struct {
+		Email string `json:"email"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		http.Error(w, `{"error": "Invalid request payload"}`, http.StatusBadRequest)
+		return
+	}
+
+	var userDetails UserDetailsResponse
+	err = database.DB.QueryRow("SELECT id, name, email FROM users WHERE email = ?", request.Email).
+		Scan(&userDetails.UserID, &userDetails.Name, &userDetails.Email)
+
+	if err != nil {
+		log.Printf("❌ Error fetching user details: %v", err)
+		http.Error(w, `{"error": "User not found"}`, http.StatusNotFound)
+		return
+	}
+
+	// ✅ Generate a JWT token (for session persistence)
+	userDetails.Token, err = utils.GenerateJWT(userDetails.UserID)
+	if err != nil {
+		http.Error(w, `{"error": "Failed to generate token"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(userDetails)
 }
