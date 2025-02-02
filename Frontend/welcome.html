@@ -739,20 +739,23 @@
 
     console.log("🛠️ Retrieved userName from localStorage:", userName);
 
-    // ✅ Ensure user is logged in properly
-    if (userName !== "unknown-user" && jwtToken) {
-        const userElement = document.getElementById("userName");
-        if (userElement) {
-            userElement.textContent = `Hello, ${userName}!`;
-        } else {
-            console.error("⚠️ Element with ID 'userName' not found in DOM.");
-        }
+// ✅ Ensure user is logged in properly
+if (userName !== "unknown-user" && jwtToken) {
+    const userElement = document.getElementById("userName");
+    const storedName = localStorage.getItem('userName') || "Guest"; // Retrieve stored name
+
+    if (userElement) {
+        userElement.textContent = `Hello, ${storedName}!`;
     } else {
-        alert("⚠️ User not logged in! Redirecting to login.");
-        localStorage.clear(); // 🧹 Clear invalid session
-        window.location.href = "login.html";
+        console.error("⚠️ Element with ID 'userName' not found in DOM.");
     }
+} else {
+    alert("⚠️ User not logged in! Redirecting to login.");
+    localStorage.clear(); // 🧹 Clear invalid session
+    window.location.href = "login.html";
+}
 });
+
 
 
 // Dynamically load the navbar
@@ -971,21 +974,23 @@ async function setupFacialRecognition(event) {
     const userEmail = localStorage.getItem('userEmail');
     const jwtToken = localStorage.getItem('jwtToken'); 
 
-    if (userEmail && jwtToken) {
-        // ✅ Update the displayed name using the stored email
-        const userNameElement = document.getElementById('userName');
-        if (userNameElement) {
-            userNameElement.textContent = `Hello, ${userName}!`;
-        } else {
-            console.error("Element with ID 'userName' not found in DOM.");
-        }
+// ✅ Ensure user is logged in properly
+if (userName !== "unknown-user" && jwtToken) {
+    const userElement = document.getElementById("userName");
+    const storedName = localStorage.getItem('userName') || "Guest"; // Retrieve stored name
+
+    if (userElement) {
+        userElement.textContent = `Hello, ${storedName}!`;
     } else {
-        // ❌ User not logged in, redirect to login
-        alert('User not logged in!');
-        localStorage.clear(); // Clear any invalid data
-        window.location.href = "login.html";
+        console.error("⚠️ Element with ID 'userName' not found in DOM.");
     }
+} else {
+    alert("⚠️ User not logged in! Redirecting to login.");
+    localStorage.clear(); // 🧹 Clear invalid session
+    window.location.href = "login.html";
+}
 };
+
 
     
         // Dynamically load the navbar
