@@ -15,7 +15,7 @@ func InitDB() {
 	var err error
 
 	// Hardcoded database connection string (not recommended for production)
-	DB, err = sql.Open("mysql", "root:yourpassword@tcp(127.0.0.1:3306)/elderly")
+	DB, err = sql.Open("mysql", "user:password@tcp(127.0.0.1:3306)/elderly")
 	if err != nil {
 		log.Fatalf("Failed to connect to the database: %v", err)
 	}
