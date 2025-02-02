@@ -804,13 +804,13 @@ async function loadNavbar() {
         console.error("❌ Error updating facial ID:", error);
     }
 }
-
-
 async function setupFacialRecognition(event) {
     if (event) event.preventDefault();
 
-    // Ensure the user is logged in
-    if (!userID || !localStorage.getItem("userName")) {
+    const userID = parseInt(localStorage.getItem("userID"), 10); // ✅ Convert userID to number
+    const userEmail = localStorage.getItem("userName");
+
+    if (!userID || !userEmail) {
         alert("Please log in to set up facial recognition.");
         return;
     }
@@ -820,22 +820,27 @@ async function setupFacialRecognition(event) {
         const userInfo = await faceio.enroll({
             locale: "auto",
             payload: { 
-                userID: localStorage.getItem("userID"),
-                email: localStorage.getItem("userName") // Store email
+                userID: userID,
+                email: userEmail
             },
         });
 
         console.log("✅ Enrollment successful:", userInfo);
         alert(`Facial Recognition Set Up Successfully! Facial ID: ${userInfo.facialId}`);
 
-        // Send Facial ID & Email to Backend
+        // ✅ Debugging: Log data before sending API request
+        console.log("🔹 Sending Facial Recognition Data:", {
+            userID: userID,
+            facialID: userInfo.facialId
+        });
+
+        // ✅ Send Facial ID & User ID to Backend
         const response = await fetch("http://localhost:8081/api/v1/users/update-facial-id", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                userID: localStorage.getItem("userID"),
-                facialID: userInfo.facialId,
-                email: localStorage.getItem("userName") // Send email to backend
+                userID: userID,  // ✅ Ensure userID is a number
+                facialID: userInfo.facialId
             }),
         });
 
@@ -852,6 +857,8 @@ async function setupFacialRecognition(event) {
         alert(`Error: ${error.message || error}`);
     }
 }
+
+
 
 
     </script>

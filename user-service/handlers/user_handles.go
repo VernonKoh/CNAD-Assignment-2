@@ -402,34 +402,50 @@ func UpdateFacialID(w http.ResponseWriter, r *http.Request) {
 
 	var request FacialIDUpdateRequest
 
-	// ✅ Read request body once
+	// ✅ Read and log the request body
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, `{"error": "Failed to read request body"}`, http.StatusBadRequest)
+		log.Println("❌ Failed to read request body:", err)
+		http.Error(w, `{"error": "Invalid request payload"}`, http.StatusBadRequest)
 		return
 	}
 	defer r.Body.Close()
 
+	log.Println("📩 Received request body:", string(body)) // ✅ Debugging Log
+
 	// ✅ Decode JSON properly
 	err = json.Unmarshal(body, &request)
 	if err != nil {
-		http.Error(w, `{"error": "Invalid request payload"}`, http.StatusBadRequest)
+		log.Println("❌ Failed to parse JSON:", err)
+		http.Error(w, `{"error": "Invalid JSON format"}`, http.StatusBadRequest)
 		return
 	}
 
 	// ✅ Validate input
 	if request.UserID == 0 || request.FacialID == "" {
+		log.Println("⚠️ Missing userID or facialID")
 		http.Error(w, `{"error": "Missing userID or facialID"}`, http.StatusBadRequest)
 		return
 	}
 
-	// ✅ Update Facial ID in database (Fixed Query)
+	// ✅ Update Facial ID in database
 	query := "UPDATE users SET facial_id = ? WHERE id = ?"
-	_, err = database.DB.Exec(query, request.FacialID, request.UserID)
+	result, err := database.DB.Exec(query, request.FacialID, request.UserID)
 	if err != nil {
+		log.Printf("❌ SQL Error updating facial ID: %v", err)
 		http.Error(w, `{"error": "Database update failed"}`, http.StatusInternalServerError)
 		return
 	}
+
+	// ✅ Ensure update was successful
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		log.Println("⚠️ No rows updated! User might not exist.")
+		http.Error(w, `{"error": "User not found"}`, http.StatusBadRequest)
+		return
+	}
+
+	log.Println("✅ Facial ID updated successfully for user:", request.UserID)
 
 	// ✅ Success Response
 	w.WriteHeader(http.StatusOK)
@@ -443,11 +459,10 @@ type FaceIOWebhookPayload struct {
 	FacialID string `json:"facialID"`
 }
 
-// HandleFaceIOWebhook processes webhook events from FACEIO
+// ✅ FACEIO Webhook Handler
 func HandleFaceIOWebhook(w http.ResponseWriter, r *http.Request) {
 	var payload FaceIOWebhookPayload
 
-	// ✅ Set response content type to JSON
 	w.Header().Set("Content-Type", "application/json")
 
 	// ✅ Read and log the raw request body
@@ -459,9 +474,9 @@ func HandleFaceIOWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	log.Println("📩 Raw Webhook Body:", string(body))
+	log.Println("📩 Webhook Received:", string(body))
 
-	// ✅ Decode the JSON request body
+	// ✅ Decode JSON request
 	err = json.Unmarshal(body, &payload)
 	if err != nil {
 		log.Println("❌ Invalid JSON payload:", err)
@@ -469,73 +484,36 @@ func HandleFaceIOWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("✅ Parsed Webhook Data: %+v\n", payload)
+	log.Printf("✅ Webhook Parsed Data: %+v\n", payload)
 
-	// ✅ Process different FACEIO events
 	switch payload.Event {
 	case "faceio.enrollment.success":
-		log.Println("🔹 Face enrollment successful for user:", payload.UserID)
+		log.Println("🔹 Face enrollment success for user:", payload.UserID)
 
-		// ✅ Update facial ID in the database
+		// ✅ Automatically update facial ID in database
 		query := "UPDATE users SET facial_id = ? WHERE id = ?"
 		result, err := database.DB.Exec(query, payload.FacialID, payload.UserID)
 		if err != nil {
-			log.Printf("❌ SQL Error updating facial ID: %v", err)
+			log.Printf("❌ Database update failed: %v", err)
 			http.Error(w, `{"error": "Database update failed"}`, http.StatusInternalServerError)
 			return
 		}
 
-		// ✅ Check if any rows were affected
+		// ✅ Ensure update worked
 		rowsAffected, _ := result.RowsAffected()
 		if rowsAffected == 0 {
-			log.Printf("⚠️ No rows updated! UserID %d might not exist.", payload.UserID)
-			http.Error(w, `{"error": "User not found or already updated"}`, http.StatusBadRequest)
+			log.Println("⚠️ No rows updated! User might not exist.")
+			http.Error(w, `{"error": "User not found"}`, http.StatusBadRequest)
 			return
 		}
 
-		log.Println("✅ Facial ID updated successfully for user:", payload.UserID)
-
-	case "faceio.authentication.success":
-		log.Println("🔹 User authenticated successfully with facial recognition:", payload.FacialID)
-
-		// ✅ Verify if facial ID exists in the database
-		var userID int
-		err := database.DB.QueryRow("SELECT id FROM users WHERE facial_id = ?", payload.FacialID).Scan(&userID)
-		if err != nil {
-			log.Printf("❌ Facial ID not found in database: %v", err)
-			http.Error(w, `{"error": "Facial ID not recognized"}`, http.StatusUnauthorized)
-			return
-		}
-
-		log.Printf("✅ User with Facial ID %s authenticated: UserID %d", payload.FacialID, userID)
-
-	case "faceio.facialid.delete":
-		log.Println("❌ Facial ID deletion requested for user:", payload.UserID)
-
-		// ✅ Remove Facial ID from Database
-		query := "UPDATE users SET facial_id = NULL WHERE id = ?"
-		result, err := database.DB.Exec(query, payload.UserID)
-		if err != nil {
-			log.Printf("❌ Error deleting facial ID: %v", err)
-			http.Error(w, `{"error": "Database update failed"}`, http.StatusInternalServerError)
-			return
-		}
-
-		// ✅ Check if any rows were affected
-		rowsAffected, _ := result.RowsAffected()
-		if rowsAffected == 0 {
-			log.Printf("⚠️ No rows deleted! UserID %d might not exist.", payload.UserID)
-			http.Error(w, `{"error": "User not found or already deleted"}`, http.StatusBadRequest)
-			return
-		}
-
-		log.Println("🗑️ Facial ID removed successfully for user:", payload.UserID)
+		log.Println("✅ Facial ID auto-updated for User:", payload.UserID)
 
 	default:
 		log.Println("⚠️ Unhandled FACEIO event:", payload.Event)
 	}
 
-	// ✅ Send Success Response
+	// ✅ Success Response
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Webhook processed successfully"})
 }
