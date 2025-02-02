@@ -3,20 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Posture Check</title>
+    <title>Posture Analysis</title>
 </head>
 <body>
-    <h1>Posture analysis</h1>
+    <h1>Posture Analysis</h1>
+
+    <!-- Buttons to switch between Image Upload and Webcam -->
+    <button id="uploadMode">Upload Image</button>
+    <button id="webcamMode">Live Webcam</button>
+
+    <!-- Image Upload Form -->
     <form id="uploadForm" enctype="multipart/form-data">
         <input type="file" name="image" id="file" accept="image/*, video/*" required>
         <button type="submit">Upload</button>
     </form>
-
     <h2>Posture Analysis:</h2>
     <pre id="analysisResults"></pre>
-
     <h2>Processed Image:</h2>
-    <img id="processedImage" style="max-width: 100%; border: 2px solid black;" />
+    <img id="processedImage" style="max-width: 100%; border: 2px solid black; display: none;" />
+
+    <!-- Webcam Feed -->
+    <h2>Live Webcam:</h2>
+    <img id="webcamFeed" src="" style="max-width: 100%; border: 2px solid black; display: none;" />
 
     <script>
         document.getElementById('uploadForm').addEventListener('submit', async (e) => {
@@ -35,9 +43,25 @@
                 const data = await response.json();
                 document.getElementById('analysisResults').textContent = JSON.stringify(data.analysis, null, 2);
                 document.getElementById('processedImage').src = data.image_url;
+                document.getElementById('processedImage').style.display = "block";
+                document.getElementById('webcamFeed').style.display = "none";
             } catch (error) {
                 console.error('Error:', error);
             }
+        });
+
+        // Toggle between Image Upload and Webcam Mode
+        document.getElementById('uploadMode').addEventListener('click', () => {
+            document.getElementById('uploadForm').style.display = "block";
+            document.getElementById('processedImage').style.display = "none";
+            document.getElementById('webcamFeed').style.display = "none";
+        });
+
+        document.getElementById('webcamMode').addEventListener('click', () => {
+            document.getElementById('uploadForm').style.display = "none";
+            document.getElementById('processedImage').style.display = "none";
+            document.getElementById('webcamFeed').src = "http://127.0.0.1:5000/webcam";
+            document.getElementById('webcamFeed').style.display = "block";
         });
     </script>
 </body>

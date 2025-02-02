@@ -1,14 +1,16 @@
 import cv2
 import numpy as np
 import mediapipe as mp
-from flask import Flask, request, send_file, jsonify
+from flask import Flask, request, send_file, jsonify, Response
 import os
+import time
 import math
 
 app = Flask(__name__)
 
 mp_pose = mp.solutions.pose
 pose = mp_pose.Pose(static_image_mode=True, min_detection_confidence=0.5, model_complexity=2)
+pose2 = mp_pose.Pose(static_image_mode=False, min_detection_confidence=0.5, model_complexity=2)
 mp_drawing = mp.solutions.drawing_utils
 
 # Get the absolute path to the directory where your script is
@@ -84,6 +86,71 @@ def process_image():
 def get_processed_image():
     output_path = os.path.join(UPLOAD_FOLDER, "output.jpg")
     return send_file(output_path, mimetype="image/jpeg")
+
+# ✅ Real-Time Webcam Stream
+def generate_frames():
+    cap = cv2.VideoCapture(0)  # Use webcam (change to 1 if using external camera)
+    
+    while cap.isOpened():
+        success, frame = cap.read()
+        if not success:
+            break
+
+        # Convert frame to RGB
+        image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        results = pose2.process(image_rgb)
+
+        if results.pose_landmarks:
+            # Draw pose landmarks
+            mp_drawing.draw_landmarks(
+                frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
+                landmark_drawing_spec=mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=2, circle_radius=3),
+                connection_drawing_spec=mp_drawing.DrawingSpec(color=(255, 0, 0), thickness=2)
+            )
+
+            # Extract keypoints
+            landmarks = results.pose_landmarks.landmark
+            def get_point(index):
+                return (landmarks[index].x, landmarks[index].y)
+
+            shoulder = get_point(11)  # Left Shoulder
+            hip = get_point(23)       # Left Hip
+            knee = get_point(25)      # Left Knee
+            ankle = get_point(27)     # Left Ankle
+            chin = get_point(1)       # Chin
+            neck = get_point(0)       # Neck
+
+            # ✅ Compute posture angles
+            back_angle = calculate_angle(shoulder, hip, knee)
+            head_angle = calculate_angle(neck, chin, shoulder)
+            knee_angle = calculate_angle(hip, knee, ankle)
+
+            # ✅ Detect risky postures
+            risk_text = ""
+            if back_angle < 160:
+                risk_text = "Hunchback detected!"
+            elif head_angle < 50:
+                risk_text = "Forward Head Posture!"
+            elif knee_angle < 160:
+                risk_text = "Bent Knees: Fall Risk!"
+
+            # Draw warning text on frame
+            if risk_text:
+                cv2.putText(frame, risk_text, (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 
+                            1, (0, 0, 255), 2, cv2.LINE_AA)
+
+        # Encode frame for streaming
+        _, buffer = cv2.imencode('.jpg', frame)
+        frame_bytes = buffer.tobytes()
+        
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+
+    cap.release()
+
+@app.route("/webcam")
+def webcam_feed():
+    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
