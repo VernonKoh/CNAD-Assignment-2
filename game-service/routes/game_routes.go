@@ -8,6 +8,6 @@ import (
 
 // RegisterGameRoutes defines all game-related routes
 func RegisterGameRoutes(router *mux.Router) {
-	router.HandleFunc("/game/submit", handlers.SubmitScore).Methods("POST") // ✅ New route
+	router.HandleFunc("/game/submit", handlers.SubmitScore).Methods("POST") // ✅ Game submission route
 
 }

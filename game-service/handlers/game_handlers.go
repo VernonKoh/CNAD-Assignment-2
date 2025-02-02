@@ -7,14 +7,14 @@ import (
 	"net/http"
 )
 
-// ScoreRequest struct to handle JSON data from frontend
+// ScoreRequest struct to handle incoming JSON data
 type ScoreRequest struct {
 	UserID    int `json:"user_id"`
 	Score     int `json:"score"`
 	TimeTaken int `json:"time_taken"`
 }
 
-// SubmitScore saves the game result in the database
+// SubmitScore saves game results into the database
 func SubmitScore(w http.ResponseWriter, r *http.Request) {
 	var request ScoreRequest
 
@@ -25,16 +25,22 @@ func SubmitScore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Insert score into database
+	// Validate user_id, score, and time_taken
+	if request.UserID == 0 || request.Score < 0 || request.TimeTaken < 0 {
+		http.Error(w, `{"error": "Invalid input values"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Insert the game result into the database
 	query := `INSERT INTO game_scores (user_id, score, time_taken) VALUES (?, ?, ?)`
 	_, err = database.DB.Exec(query, request.UserID, request.Score, request.TimeTaken)
 	if err != nil {
-		log.Println("Error inserting score:", err)
+		log.Println("❌ Error inserting score:", err)
 		http.Error(w, `{"error": "Failed to save score"}`, http.StatusInternalServerError)
 		return
 	}
 
 	// Success response
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"message": "Score submitted successfully"})
+	json.NewEncoder(w).Encode(map[string]string{"message": "Score submitted successfully!"})
 }
