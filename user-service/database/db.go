@@ -23,7 +23,7 @@ func InitDB() {
 
 	mysqlPassword := os.Getenv("MYSQL_PASS")
 	if mysqlPassword == "" {
-		mysqlPassword = "yourpassword" // Default password for others
+		mysqlPassword = "password" // Default password for others
 	}
 
 	mysqlHost := os.Getenv("MYSQL_HOST")

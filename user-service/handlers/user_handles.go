@@ -10,7 +10,10 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
+
+	"github.com/gorilla/mux"
 )
 
 func ValidateEmail(email string) bool {
@@ -283,6 +286,106 @@ func VerifyUser(w http.ResponseWriter, r *http.Request) {
 	log.Println("User email verified successfully")
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"message": "Email verified successfully"})
+}
+
+func GetUserProfile(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"] // Extract user ID from the URL
+
+	// Validate if ID is numeric
+	userID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Printf("Invalid user ID: %s", id)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid user ID"})
+		return
+	}
+
+	var profile models.UserProfile
+
+	// Fetch user data and details from the database
+	query := `
+		SELECT 
+			u.id, u.email, u.name, u.role, 
+			ud.age, ud.gender, ud.address, ud.phone_number
+		FROM users u
+		LEFT JOIN user_details ud ON u.id = ud.user_id
+		WHERE u.id = ?`
+	err = database.DB.QueryRow(query, userID).Scan(
+		&profile.ID, &profile.Email, &profile.Name, &profile.Role,
+		&profile.Age, &profile.Gender, &profile.Address, &profile.PhoneNumber,
+	)
+	if err != nil {
+		log.Printf("Error fetching user profile for ID=%d: %v", userID, err)
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{"error": "User not found"})
+		return
+	}
+
+	log.Printf("Fetched user profile for ID=%d", userID)
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(profile)
+}
+
+// UpdateUserProfile allows users to update their details and membership
+func UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"] // Extract user ID from URL
+	// Validate if ID is numeric
+	userID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Printf("Invalid user ID: %s", id)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid user ID"})
+		return
+	}
+	// Decode the JSON payload
+	var updatedProfile models.UserProfile
+	if err := json.NewDecoder(r.Body).Decode(&updatedProfile); err != nil {
+		log.Printf("Error decoding request body: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request payload"})
+		return
+	}
+
+	// Validate input fields (e.g., ensure no empty fields)
+	if updatedProfile.Name == "" || updatedProfile.Email == "" {
+		log.Println("Name or Email cannot be empty")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Name and Email are required"})
+		return
+	}
+	// Update the `users` table
+	userQuery := `
+		UPDATE users 
+		SET email = ?, name = ? 
+		WHERE id = ?
+	`
+	_, err = database.DB.Exec(userQuery, updatedProfile.Email, updatedProfile.Name, userID)
+	if err != nil {
+		log.Printf("Error updating users table for ID=%d: %v", userID, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to update user information"})
+		return
+	}
+
+	// Update the `user_details` table
+	detailsQuery := `
+		UPDATE user_details 
+		SET age = ?, gender = ?, address = ?, phone_number = ? 
+		WHERE user_id = ?
+	`
+	_, err = database.DB.Exec(detailsQuery, updatedProfile.Age, updatedProfile.Gender, updatedProfile.Address, updatedProfile.PhoneNumber, userID)
+	if err != nil {
+		log.Printf("Error updating user_details table for user_id=%d: %v", userID, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to update user details"})
+		return
+	}
+
+	log.Printf("Updated user ID=%s: Name=%s, Age=%d", id, updatedProfile.Name, updatedProfile.Age)
+	// Return success response
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "User profile updated successfully"})
 }
 
 // FacialIDUpdateRequest struct
