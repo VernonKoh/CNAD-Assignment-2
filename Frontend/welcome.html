@@ -722,7 +722,6 @@
 
         <!-- Buttons Container -->
         <div class="btn-container">
-            <a href="/bookings.html" class="btn btn-primary">Book Now!</a>
             <button class="btn custom-blue-btn" onclick="setupFacialRecognition()">Set Up Facial Recognition</button>
 
         </div>
@@ -733,17 +732,31 @@
 <script>
     loadNavbar(); // Load navbar dynamically
 
-    const userName = localStorage.getItem('userName');
+    document.addEventListener("DOMContentLoaded", function () {
+    const userName = localStorage.getItem('userName') || "unknown-user";
     const userID = localStorage.getItem('userID');
     const jwtToken = localStorage.getItem('jwtToken');
 
-    if (userName && jwtToken) {
-        document.getElementById('userName').textContent = `Hello, ${userName}!`;
+    console.log("🛠️ Retrieved userName from localStorage:", userName);
+
+// ✅ Ensure user is logged in properly
+if (userName !== "unknown-user" && jwtToken) {
+    const userElement = document.getElementById("userName");
+    const storedName = localStorage.getItem('userName') || "Guest"; // Retrieve stored name
+
+    if (userElement) {
+        userElement.textContent = `Hello, ${storedName}!`;
     } else {
-        alert('User not logged in!');
-        localStorage.clear(); // Clear invalid data
-        window.location.href = "login.html";
+        console.error("⚠️ Element with ID 'userName' not found in DOM.");
     }
+} else {
+    alert("⚠️ User not logged in! Redirecting to login.");
+    localStorage.clear(); // 🧹 Clear invalid session
+    window.location.href = "login.html";
+}
+});
+
+
 
 // Dynamically load the navbar
 async function loadNavbar() {
@@ -756,60 +769,96 @@ async function loadNavbar() {
             }
         }
 
-        const faceio = new faceIO("fioab6ed"); // Replace with your FaceIO public ID
+        const faceio = new faceIO("fioafbbd"); // Replace with your FaceIO public ID
 
         async function updateFacialId(userID, facialId) {
     try {
-        const response = await fetch('http://localhost:8081/api/v1/users/update-facial-id', {
+        const response = await fetch('http://localhost:8081/api/v1/users/get-email-by-faceid', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userID, facialID: facialId })
+            body: JSON.stringify({ facialID: facialId }) // ✅ Ensure JSON is formatted correctly
         });
-        const data = await response.json();
-        console.log("Facial ID updated successfully:", data);
+
+        // ✅ Read raw response as text (for debugging)
+        const textResponse = await response.text();
+        console.log("🔍 Raw Response:", textResponse); // Debugging: Check if the response is valid JSON
+
+        // ✅ Try parsing JSON safely
+        let data;
+        try {
+            data = JSON.parse(textResponse);
+        } catch (error) {
+            console.error("❌ JSON Parsing Error:", error, textResponse);
+            alert("Server returned an invalid response.");
+            return;
+        }
+
+        // ✅ Check if the request was successful
+        if (response.ok && data.email) {
+            console.log("✅ Facial ID updated successfully:", data);
+        } else {
+            console.warn("⚠️ Server response did not contain an email:", data);
+        }
+
     } catch (error) {
-        console.error("Error updating facial ID:", error);
+        console.error("❌ Error updating facial ID:", error);
     }
 }
-
 async function setupFacialRecognition(event) {
     if (event) event.preventDefault();
 
-    if (!userID) {
+    const userID = parseInt(localStorage.getItem("userID"), 10); // ✅ Convert userID to number
+    const userEmail = localStorage.getItem("userName");
+
+    if (!userID || !userEmail) {
         alert("Please log in to set up facial recognition.");
         return;
     }
 
     try {
+        console.log("🔹 Starting FaceIO Enrollment...");
         const userInfo = await faceio.enroll({
             locale: "auto",
-            payload: { userID },
+            payload: { 
+                userID: userID,
+                email: userEmail
+            },
         });
 
+        console.log("✅ Enrollment successful:", userInfo);
         alert(`Facial Recognition Set Up Successfully! Facial ID: ${userInfo.facialId}`);
 
-        // Send Facial ID to the backend (Fix JSON formatting)
-        const response = await fetch('http://localhost:8081/api/v1/users/update-facial-id', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userID: userID, facialID: userInfo.facialId }) // Ensure JSON format
+        // ✅ Debugging: Log data before sending API request
+        console.log("🔹 Sending Facial Recognition Data:", {
+            userID: userID,
+            facialID: userInfo.facialId
         });
 
-        // 🛠️ FIX: Avoid reading response twice
+        // ✅ Send Facial ID & User ID to Backend
+        const response = await fetch("http://localhost:8081/api/v1/users/update-facial-id", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                userID: userID,  // ✅ Ensure userID is a number
+                facialID: userInfo.facialId
+            }),
+        });
+
         if (!response.ok) {
-            const errorData = await response.json(); // Read once
+            const errorData = await response.json();
             throw new Error(errorData.error || "Failed to save facial recognition data.");
         }
 
-        const data = await response.json(); // Read response only once
-        console.log("Facial ID updated successfully:", data);
+        console.log("✅ Facial ID updated in the database.");
         alert("Your facial recognition data has been saved!");
 
     } catch (error) {
-        console.error("Facial recognition setup failed:", error);
+        console.error("❌ Facial recognition setup failed:", error);
         alert(`Error: ${error.message || error}`);
     }
 }
+
+
 
 
     </script>
@@ -928,28 +977,28 @@ async function setupFacialRecognition(event) {
     
 
     
-        // Check if user is logged in
-        if (userName && jwtToken) {
-            // Display the user's name and token
-            const userNameElement = document.getElementById('userName');
-            if (userNameElement) {
-                userNameElement.textContent = `Hello, ${userName}!`;
-            } else {
-                console.error("Element with ID 'userName' not found in DOM.");
-            }
-    
-            const jwtTokenElement = document.getElementById('jwtToken');
-            if (jwtTokenElement) {
-                jwtTokenElement.textContent = jwtToken;
-            } else {
-                console.error("Element with ID 'jwtToken' not found in DOM.");
-            }
-        } else {
-            // If not logged in, redirect to login.html
-            alert('User not logged in!');
-            localStorage.clear(); // Clear any invalid or partial data
-            window.location.href = "login.html";
-        }
+        window.onload = function() {
+    const userEmail = localStorage.getItem('userEmail');
+    const jwtToken = localStorage.getItem('jwtToken'); 
+
+// ✅ Ensure user is logged in properly
+if (userName !== "unknown-user" && jwtToken) {
+    const userElement = document.getElementById("userName");
+    const storedName = localStorage.getItem('userName') || "Guest"; // Retrieve stored name
+
+    if (userElement) {
+        userElement.textContent = `Hello, ${storedName}!`;
+    } else {
+        console.error("⚠️ Element with ID 'userName' not found in DOM.");
+    }
+} else {
+    alert("⚠️ User not logged in! Redirecting to login.");
+    localStorage.clear(); // 🧹 Clear invalid session
+    window.location.href = "login.html";
+}
+};
+
+
     
         // Dynamically load the navbar
         async function loadNavbar() {

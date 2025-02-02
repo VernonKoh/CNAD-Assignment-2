@@ -4,13 +4,17 @@ import (
 	"CNAD_Assignment_2/user-service/database"
 	"CNAD_Assignment_2/user-service/models"
 	"CNAD_Assignment_2/user-service/utils"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
+
+	"github.com/gorilla/mux"
 )
 
 func ValidateEmail(email string) bool {
@@ -285,6 +289,106 @@ func VerifyUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "Email verified successfully"})
 }
 
+func GetUserProfile(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"] // Extract user ID from the URL
+
+	// Validate if ID is numeric
+	userID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Printf("Invalid user ID: %s", id)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid user ID"})
+		return
+	}
+
+	var profile models.UserProfile
+
+	// Fetch user data and details from the database
+	query := `
+		SELECT 
+			u.id, u.email, u.name, u.role, 
+			ud.age, ud.gender, ud.address, ud.phone_number
+		FROM users u
+		LEFT JOIN user_details ud ON u.id = ud.user_id
+		WHERE u.id = ?`
+	err = database.DB.QueryRow(query, userID).Scan(
+		&profile.ID, &profile.Email, &profile.Name, &profile.Role,
+		&profile.Age, &profile.Gender, &profile.Address, &profile.PhoneNumber,
+	)
+	if err != nil {
+		log.Printf("Error fetching user profile for ID=%d: %v", userID, err)
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{"error": "User not found"})
+		return
+	}
+
+	log.Printf("Fetched user profile for ID=%d", userID)
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(profile)
+}
+
+// UpdateUserProfile allows users to update their details and membership
+func UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"] // Extract user ID from URL
+	// Validate if ID is numeric
+	userID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Printf("Invalid user ID: %s", id)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid user ID"})
+		return
+	}
+	// Decode the JSON payload
+	var updatedProfile models.UserProfile
+	if err := json.NewDecoder(r.Body).Decode(&updatedProfile); err != nil {
+		log.Printf("Error decoding request body: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request payload"})
+		return
+	}
+
+	// Validate input fields (e.g., ensure no empty fields)
+	if updatedProfile.Name == "" || updatedProfile.Email == "" {
+		log.Println("Name or Email cannot be empty")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Name and Email are required"})
+		return
+	}
+	// Update the `users` table
+	userQuery := `
+		UPDATE users 
+		SET email = ?, name = ? 
+		WHERE id = ?
+	`
+	_, err = database.DB.Exec(userQuery, updatedProfile.Email, updatedProfile.Name, userID)
+	if err != nil {
+		log.Printf("Error updating users table for ID=%d: %v", userID, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to update user information"})
+		return
+	}
+
+	// Update the `user_details` table
+	detailsQuery := `
+		UPDATE user_details 
+		SET age = ?, gender = ?, address = ?, phone_number = ? 
+		WHERE user_id = ?
+	`
+	_, err = database.DB.Exec(detailsQuery, updatedProfile.Age, updatedProfile.Gender, updatedProfile.Address, updatedProfile.PhoneNumber, userID)
+	if err != nil {
+		log.Printf("Error updating user_details table for user_id=%d: %v", userID, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to update user details"})
+		return
+	}
+
+	log.Printf("Updated user ID=%s: Name=%s, Age=%d", id, updatedProfile.Name, updatedProfile.Age)
+	// Return success response
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "User profile updated successfully"})
+}
+
 // FacialIDUpdateRequest struct
 type FacialIDUpdateRequest struct {
 	UserID   int    `json:"userID"`
@@ -298,34 +402,50 @@ func UpdateFacialID(w http.ResponseWriter, r *http.Request) {
 
 	var request FacialIDUpdateRequest
 
-	// ✅ Read request body once
+	// ✅ Read and log the request body
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, `{"error": "Failed to read request body"}`, http.StatusBadRequest)
+		log.Println("❌ Failed to read request body:", err)
+		http.Error(w, `{"error": "Invalid request payload"}`, http.StatusBadRequest)
 		return
 	}
 	defer r.Body.Close()
 
+	log.Println("📩 Received request body:", string(body)) // ✅ Debugging Log
+
 	// ✅ Decode JSON properly
 	err = json.Unmarshal(body, &request)
 	if err != nil {
-		http.Error(w, `{"error": "Invalid request payload"}`, http.StatusBadRequest)
+		log.Println("❌ Failed to parse JSON:", err)
+		http.Error(w, `{"error": "Invalid JSON format"}`, http.StatusBadRequest)
 		return
 	}
 
 	// ✅ Validate input
 	if request.UserID == 0 || request.FacialID == "" {
+		log.Println("⚠️ Missing userID or facialID")
 		http.Error(w, `{"error": "Missing userID or facialID"}`, http.StatusBadRequest)
 		return
 	}
 
 	// ✅ Update Facial ID in database
 	query := "UPDATE users SET facial_id = ? WHERE id = ?"
-	_, err = database.DB.Exec(query, request.FacialID, request.UserID)
+	result, err := database.DB.Exec(query, request.FacialID, request.UserID)
 	if err != nil {
+		log.Printf("❌ SQL Error updating facial ID: %v", err)
 		http.Error(w, `{"error": "Database update failed"}`, http.StatusInternalServerError)
 		return
 	}
+
+	// ✅ Ensure update was successful
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		log.Println("⚠️ No rows updated! User might not exist.")
+		http.Error(w, `{"error": "User not found"}`, http.StatusBadRequest)
+		return
+	}
+
+	log.Println("✅ Facial ID updated successfully for user:", request.UserID)
 
 	// ✅ Success Response
 	w.WriteHeader(http.StatusOK)
@@ -337,84 +457,153 @@ type FaceIOWebhookPayload struct {
 	Event    string `json:"event"`
 	UserID   int    `json:"userID"`
 	FacialID string `json:"facialID"`
-	Age      int    `json:"age,omitempty"` // FACEIO provides an estimated age
 }
 
-// HandleFaceIOWebhook processes webhook events from FACEIO
+// ✅ FACEIO Webhook Handler
 func HandleFaceIOWebhook(w http.ResponseWriter, r *http.Request) {
 	var payload FaceIOWebhookPayload
 
-	// ✅ Set response content type to JSON
 	w.Header().Set("Content-Type", "application/json")
 
-	// ✅ Log the raw request body for debugging
-	body, _ := io.ReadAll(r.Body)
-	log.Println("📩 Raw Webhook Body:", string(body))
-
-	// ✅ Decode the JSON request body
-	err := json.Unmarshal(body, &payload)
+	// ✅ Read and log the raw request body
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		log.Printf("❌ Invalid webhook payload: %v", err)
+		log.Println("❌ Error reading request body:", err)
+		http.Error(w, `{"error": "Failed to read request body"}`, http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	log.Println("📩 Webhook Received:", string(body))
+
+	// ✅ Decode JSON request
+	err = json.Unmarshal(body, &payload)
+	if err != nil {
+		log.Println("❌ Invalid JSON payload:", err)
 		http.Error(w, `{"error": "Invalid JSON data"}`, http.StatusBadRequest)
 		return
 	}
 
-	log.Printf("✅ Parsed Webhook Data: %+v\n", payload)
+	log.Printf("✅ Webhook Parsed Data: %+v\n", payload)
 
-	// ✅ Process different FACEIO events
 	switch payload.Event {
 	case "faceio.enrollment.success":
-		log.Println("🔹 Face enrollment successful for user:", payload.UserID)
+		log.Println("🔹 Face enrollment success for user:", payload.UserID)
 
-		// ✅ Update facial ID in the database
+		// ✅ Automatically update facial ID in database
 		query := "UPDATE users SET facial_id = ? WHERE id = ?"
 		result, err := database.DB.Exec(query, payload.FacialID, payload.UserID)
 		if err != nil {
-			log.Printf("❌ SQL Error: %v", err)
+			log.Printf("❌ Database update failed: %v", err)
 			http.Error(w, `{"error": "Database update failed"}`, http.StatusInternalServerError)
 			return
 		}
 
-		// ✅ Check if any rows were affected
+		// ✅ Ensure update worked
 		rowsAffected, _ := result.RowsAffected()
 		if rowsAffected == 0 {
-			log.Printf("⚠️ No rows updated! UserID %d might not exist.", payload.UserID)
-			http.Error(w, `{"error": "User not found or already updated"}`, http.StatusBadRequest)
+			log.Println("⚠️ No rows updated! User might not exist.")
+			http.Error(w, `{"error": "User not found"}`, http.StatusBadRequest)
 			return
 		}
 
-		log.Println("✅ Facial ID updated successfully for user:", payload.UserID)
-
-	case "faceio.authentication.success":
-		log.Println("🔹 User authenticated successfully with facial recognition:", payload.FacialID)
-
-	case "faceio.facialid.delete":
-		log.Println("❌ Facial ID deleted for user:", payload.UserID)
-
-		// ✅ Remove Facial ID from Database
-		query := "UPDATE users SET facial_id = NULL WHERE id = ?"
-		result, err := database.DB.Exec(query, payload.UserID)
-		if err != nil {
-			log.Printf("❌ Error deleting facial ID: %v", err)
-			http.Error(w, `{"error": "Database update failed"}`, http.StatusInternalServerError)
-			return
-		}
-
-		// ✅ Check if any rows were affected
-		rowsAffected, _ := result.RowsAffected()
-		if rowsAffected == 0 {
-			log.Printf("⚠️ No rows deleted! UserID %d might not exist.", payload.UserID)
-			http.Error(w, `{"error": "User not found or already deleted"}`, http.StatusBadRequest)
-			return
-		}
-
-		log.Println("🗑️ Facial ID removed successfully for user:", payload.UserID)
+		log.Println("✅ Facial ID auto-updated for User:", payload.UserID)
 
 	default:
 		log.Println("⚠️ Unhandled FACEIO event:", payload.Event)
 	}
 
-	// ✅ Send Success Response
+	// ✅ Success Response
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Webhook processed successfully"})
+}
+
+// GetEmailByFaceID retrieves the email associated with a given facial ID
+func GetEmailByFaceID(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var request struct {
+		FacialID string `json:"facialID"`
+	}
+
+	// ✅ Read and parse request body
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		log.Println("❌ Invalid request payload:", err)
+		http.Error(w, `{"error": "Invalid JSON format"}`, http.StatusBadRequest)
+		return
+	}
+
+	// ✅ Validate input
+	if request.FacialID == "" {
+		log.Println("❌ Missing facial ID")
+		http.Error(w, `{"error": "Facial ID is required"}`, http.StatusBadRequest)
+		return
+	}
+
+	// ✅ Query the database to get the user ID and email
+	var userID int
+	var userEmail string
+
+	query := "SELECT id, email FROM users WHERE facial_id = ?"
+	err = database.DB.QueryRow(query, request.FacialID).Scan(&userID, &userEmail)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			log.Printf("⚠️ No user found for facialID: %s", request.FacialID)
+		} else {
+			log.Printf("❌ Database error: %v", err)
+		}
+		http.Error(w, `{"error": "Facial ID not found"}`, http.StatusNotFound)
+		return
+	}
+
+	// ✅ Send back the email and user ID in JSON format
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"userID": userID,
+		"email":  userEmail,
+	})
+
+}
+
+// UserDetailsResponse struct
+type UserDetailsResponse struct {
+	UserID int    `json:"userID"`
+	Name   string `json:"name"`
+	Email  string `json:"email"`
+	Token  string `json:"token"`
+}
+
+// GetUserDetails returns user details based on email
+func GetUserDetails(w http.ResponseWriter, r *http.Request) {
+	var request struct {
+		Email string `json:"email"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		http.Error(w, `{"error": "Invalid request payload"}`, http.StatusBadRequest)
+		return
+	}
+
+	var userDetails UserDetailsResponse
+	err = database.DB.QueryRow("SELECT id, name, email FROM users WHERE email = ?", request.Email).
+		Scan(&userDetails.UserID, &userDetails.Name, &userDetails.Email)
+
+	if err != nil {
+		log.Printf("❌ Error fetching user details: %v", err)
+		http.Error(w, `{"error": "User not found"}`, http.StatusNotFound)
+		return
+	}
+
+	// ✅ Generate a JWT token (for session persistence)
+	userDetails.Token, err = utils.GenerateJWT(userDetails.UserID)
+	if err != nil {
+		http.Error(w, `{"error": "Failed to generate token"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(userDetails)
 }

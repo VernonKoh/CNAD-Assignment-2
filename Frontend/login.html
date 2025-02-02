@@ -85,7 +85,7 @@
     <div id="faceio-modal"></div>
     <script src="https://cdn.faceio.net/fio.js"></script>
     <script>
-        const faceio = new faceIO("fioab6ed"); // Replace with your public ID
+        const faceio = new faceIO("fioafbbd"); // Replace with your public ID
 
         // Login with Email and Password
         document.getElementById('loginForm').addEventListener('submit', async function (e) {
@@ -118,43 +118,58 @@
             }
         });
 
-        // Authenticate with Facial Recognition
-function authenticateUser() {
-    faceio.authenticate({
-        locale: "auto",
-    }).then(userData => {
-        console.log("Authentication successful:", userData);
+        async function authenticateUser() {
+    try {
+        const userData = await faceio.authenticate({
+            locale: "auto",
+        });
 
-        // Save the authenticated user's details in localStorage
-        const userID = userData.payload.userID || "unknown-user"; // Ensure a fallback
-        const email = userData.payload.email || "unknown-email"; // Ensure a fallback
+        console.log("✅ Authentication successful:", userData);
 
-        // Mock JWT Token - Replace this if your server provides a token during FaceIO login
-        const jwtToken = "mock-jwt-token-for-authentication";
+        // ✅ Save Facial ID to localStorage
+        localStorage.setItem('facialID', userData.facialId);
 
-        // Save data to localStorage for session persistence
-        localStorage.setItem('userID', userID);
-        localStorage.setItem('userName', email); // Assuming payload includes 'email'
-        localStorage.setItem('jwtToken', jwtToken);
+        // ✅ Fetch User Email from Backend
+        const response = await fetch('http://localhost:8081/api/v1/users/get-email-by-faceid', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ facialID: userData.facialId })
+        });
 
-        alert(`Welcome back, ${email}!`);
-        window.location.href = 'welcome.html'; // Redirect to the welcome page
-    }).catch(errCode => {
-        console.error('Authentication failed:', errCode);
+        const data = await response.json();
+        if (response.ok && data.email) {
+            localStorage.setItem('userEmail', data.email);
 
-        // Display user-friendly error messages
-        switch (errCode) {
-            case fioErrCode.NO_FACE_DETECTED:
-                alert("No face detected. Please ensure your face is visible to the camera.");
-                break;
-            case fioErrCode.FACE_MISMATCH:
-                alert("Face mismatch. Please ensure you are using the enrolled face.");
-                break;
-            default:
-                alert(`Authentication failed. Error code: ${errCode}`);
+            // ✅ Fetch user data & JWT token
+            const userDetailsResponse = await fetch('http://localhost:8081/api/v1/users/get-user-details', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: data.email }) // Get user details via email
+            });
+
+            const userDetails = await userDetailsResponse.json();
+            if (userDetailsResponse.ok && userDetails.userID) {
+                localStorage.setItem('userID', userDetails.userID);
+                localStorage.setItem('userName', userDetails.name);
+                localStorage.setItem('jwtToken', userDetails.token);
+
+                alert(`Welcome back, ${userDetails.name}!`);
+                window.location.href = 'welcome.html'; // Redirect to the welcome page
+            } else {
+                alert("Failed to fetch user details.");
+            }
+        } else {
+            alert("Failed to fetch user email.");
         }
-    });
+
+    } catch (errCode) {
+        console.error('❌ Authentication failed:', errCode);
+        alert(`Authentication failed. Error code: ${errCode}`);
+    }
 }
+
+
+
     </script>
 </body>
 
