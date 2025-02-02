@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Score</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            background-color: #12181f;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        h1 {
+            font-size: 50px;
+        }
+        p, h2 {
+            font-size: 30px;
+        }
+        table {
+            margin-top: 20px;
+            width: 70%;
+            border-collapse: collapse;
+            background-color: #2c3e50;
+            color: white;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid white;
+        }
+        th {
+            background-color: #1f8d4a;
+        }
+        .actions {
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 20px;
+            border-radius: 10px;
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #1f8d4a;
+        }
+        #memory-rating {
+            font-size: 28px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🎉 Game Over! 🎉</h1>
+    <p>Your Score: <span id="score">Loading...</span></p>
+    <p>Time Taken: <span id="time">Loading...</span> seconds</p>
+    <p id="memory-rating">🔍 Memory Rating: Evaluating...</p>
+
+    <h2>🏆 Best Score (Lowest Time)</h2>
+    <p id="best-score">Loading...</p>
+
+    <h2>📜 Past Scores</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Score</th>
+                <th>Time Taken (s)</th>
+                <th>Memory Rating</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody id="score-table">
+            <tr><td colspan="4">Loading...</td></tr>
+        </tbody>
+    </table>
+
+    <div class="actions">
+        <button onclick="restartGame()">Play Again</button>
+        <button onclick="goHome()">Home</button>
+    </div>
+
+    <script>
+        const userID = localStorage.getItem("userID");
+
+        // ✅ Display last game score
+        const lastGameTime = parseInt(localStorage.getItem("lastGameTime")) || 0;
+        document.getElementById("score").textContent = localStorage.getItem("lastGameScore") || "N/A";
+        document.getElementById("time").textContent = lastGameTime || "N/A";
+
+        function restartGame() {
+            window.location.href = "game.html";
+        }
+
+        function goHome() {
+            window.location.href = "welcome.html";
+        }
+
+        // ✅ Function to determine Memory Rating
+        function getMemoryRating(time) {
+            if (time < 20) return "🏆 Excellent Memory";
+            if (time < 30) return "👍 Good Memory";
+            if (time < 40) return "🙂 Average Memory";
+            if (time < 50) return "😐 Bad Memory";
+            if (time < 60) return "😞 Poor Memory";
+            return "❌ Needs Improvement";
+        }
+
+        document.getElementById("memory-rating").textContent = `🔍 Memory Rating: ${getMemoryRating(lastGameTime)}`;
+
+        // ✅ Fetch and display past scores
+        fetch(`http://localhost:8083/game/scores/${userID}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log("Fetched Scores:", data); // ✅ Debug Output
+
+                const scoreTable = document.getElementById("score-table");
+                scoreTable.innerHTML = ""; // ✅ Clear previous content
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    scoreTable.innerHTML = "<tr><td colspan='4'>No past scores available</td></tr>";
+                    document.getElementById("best-score").textContent = "No best score available.";
+                    return;
+                }
+
+                let bestTime = Infinity; // ✅ Variable to track the best score (lowest time)
+                let bestScoreEntry = null;
+
+                data.forEach(score => {
+                    let memoryRating = getMemoryRating(score.time_taken);
+
+                    let row = `<tr>
+                        <td>${score.score}</td>
+                        <td>${score.time_taken}</td>
+                        <td>${memoryRating}</td>
+                        <td>${new Date(score.timestamp).toLocaleString()}</td>
+                    </tr>`;
+                    scoreTable.innerHTML += row;
+
+                    // ✅ Find the lowest time_taken
+                    if (score.time_taken < bestTime) {
+                        bestTime = score.time_taken;
+                        bestScoreEntry = score;
+                    }
+                });
+
+                // ✅ Display the best score
+                if (bestScoreEntry) {
+                    document.getElementById("best-score").textContent = `${bestScoreEntry.time_taken} seconds`;
+                } else {
+                    document.getElementById("best-score").textContent = "No best score available.";
+                }
+            })
+            .catch(error => {
+                console.error("Error loading scores:", error);
+                document.getElementById("score-table").innerHTML = "<tr><td colspan='4'>⚠️ Failed to load scores</td></tr>";
+                document.getElementById("best-score").textContent = "⚠️ Error fetching data.";
+            });
+    </script>
+
+</body>
+</html>

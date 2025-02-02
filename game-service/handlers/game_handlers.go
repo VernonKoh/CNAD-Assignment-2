@@ -5,16 +5,24 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
-// ScoreRequest struct to handle incoming JSON data
+// ScoreRequest struct
 type ScoreRequest struct {
 	UserID    int `json:"user_id"`
 	Score     int `json:"score"`
 	TimeTaken int `json:"time_taken"`
 }
 
-// SubmitScore saves game results into the database
+// ScoreResponse struct for returning scores
+type ScoreResponse struct {
+	Score     int `json:"score"`
+	TimeTaken int `json:"time_taken"`
+}
+
+// ✅ Function to handle score submission
 func SubmitScore(w http.ResponseWriter, r *http.Request) {
 	var request ScoreRequest
 
@@ -31,7 +39,7 @@ func SubmitScore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Insert the game result into the database
+	// ✅ Insert game results into the database
 	query := `INSERT INTO game_scores (user_id, score, time_taken) VALUES (?, ?, ?)`
 	_, err = database.DB.Exec(query, request.UserID, request.Score, request.TimeTaken)
 	if err != nil {
@@ -40,7 +48,47 @@ func SubmitScore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Success response
+	// ✅ Success response
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"message": "Score submitted successfully!"})
+}
+
+// ✅ Function to retrieve user game scores
+func GetUserScores(w http.ResponseWriter, r *http.Request) {
+	// Get user ID from request URL
+	vars := mux.Vars(r)
+	userID := vars["id"]
+
+	// Query the database for the user's game scores
+	rows, err := database.DB.Query("SELECT score, time_taken FROM game_scores WHERE user_id = ? ORDER BY time_taken ASC", userID)
+	if err != nil {
+		log.Println("❌ Error fetching scores:", err)
+		http.Error(w, `{"error": "Failed to retrieve scores"}`, http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	// Store retrieved scores
+	var scores []ScoreResponse
+	for rows.Next() {
+		var score ScoreResponse
+		if err := rows.Scan(&score.Score, &score.TimeTaken); err != nil {
+			log.Println("❌ Error scanning score row:", err)
+			http.Error(w, `{"error": "Failed to parse scores"}`, http.StatusInternalServerError)
+			return
+		}
+		scores = append(scores, score)
+	}
+
+	// ✅ Handle case where no scores exist for user
+	if len(scores) == 0 {
+		log.Println("⚠️ No scores found for user", userID)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode([]ScoreResponse{}) // ✅ Return an empty array instead of null
+		return
+	}
+
+	// ✅ Send JSON response with scores
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(scores)
 }

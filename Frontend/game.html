@@ -251,7 +251,7 @@ function checkGameOver() {
     if (matchedPairs === totalPairs) {
         clearInterval(timer); // Stop the timer
 
-        // ✅ Get user ID from localStorage (set at login)
+        // ✅ Get user ID from localStorage
         let userID = localStorage.getItem("userID");
 
         if (!userID) {
@@ -260,7 +260,7 @@ function checkGameOver() {
             return;
         }
 
-        // Prepare game data to send
+        // ✅ Prepare game data
         const gameData = {
             user_id: parseInt(userID), // Ensure it's an integer
             score: score,
@@ -278,19 +278,21 @@ function checkGameOver() {
         })
         .then(response => response.json())
         .then(data => {
-            alert(`🎉 Game Over! You finished in ${elapsedTime} seconds with a score of ${score}!\n${data.message}`);
+            if (data.message) {
+                // ✅ Store user score & time in localStorage for gamescore.html
+                localStorage.setItem("lastGameScore", score);
+                localStorage.setItem("lastGameTime", elapsedTime);
+
+                // ✅ Redirect user to `gamescore.html`
+                window.location.href = "gamescore.html";
+            } else {
+                alert("❌ Error saving score. Try again.");
+            }
         })
         .catch(error => {
             alert(`❌ Error submitting score: ${error.message}`);
             console.error("Submit error:", error);
         });
-
-        // ✅ Store best time
-        if (elapsedTime < bestTime) {
-            bestTime = elapsedTime;
-            localStorage.setItem("bestTime", bestTime);
-            alert(`🎉 New Best Time: ${elapsedTime} seconds!`);
-        }
     }
 }
 
