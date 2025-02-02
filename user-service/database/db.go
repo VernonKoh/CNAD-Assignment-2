@@ -3,17 +3,15 @@ package database
 import (
 	"database/sql"
 	"log"
-	"os"
 
-	_ "github.com/go-sql-driver/mysql" // MySQL driver
+	_ "github.com/go-sql-driver/mysql"
 )
 
-// Global database connection
 var DB *sql.DB
 
-// InitDB initializes the database connection
 func InitDB() {
 	var err error
+<<<<<<< HEAD
 
 	// Read MySQL credentials from environment variables, fallback to default values
 	mysqlUser := os.Getenv("MYSQL_USER")
@@ -40,26 +38,16 @@ func InitDB() {
 	dsn := mysqlUser + ":" + mysqlPassword + "@tcp(" + mysqlHost + ":3306)/" + mysqlDatabase
 
 	DB, err = sql.Open("mysql", dsn)
+=======
+	DB, err = sql.Open("mysql", "user:password@tcp(127.0.0.1:3306)/elderly?parseTime=true&loc=Local")
+>>>>>>> a892430054abc094c0711c32ca3f644029111df5
 	if err != nil {
-		log.Fatalf("❌ Failed to connect to the database: %v", err)
+		log.Fatalf("Failed to connect to the database: %v", err)
 	}
 
-	// Verify connection
 	if err = DB.Ping(); err != nil {
-		log.Fatalf("❌ Database connection error: %v", err)
+		log.Fatalf("Database connection error: %v", err)
 	}
 
-	log.Println("✅ Database connected successfully")
+	log.Println("Database connected successfully")
 }
-
-// GetDB returns the database connection instance
-func GetDB() *sql.DB {
-	return DB
-}
-
-// run this in cmd before starting go app (set up environment variables)
-// set MYSQL_USER=root
-// set MYSQL_PASS=yourpassword  # Replace with your own MySQL password
-// set MYSQL_HOST=127.0.0.1
-// set MYSQL_DBNAME=elderly
-// go run main.go

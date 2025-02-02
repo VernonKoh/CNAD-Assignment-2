@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Card Game</title>
+    <style>
+        body {
+            min-height: 100vh;
+            min-width: 100vh;
+            background-color: #12181f;
+            color: white;
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            font-weight: 700;
+            font-size: 50px;
+        }
+
+        p {
+            font-size: 30px;
+            font-weight: bold;
+        }
+
+        .actions {
+            display: flex;
+            justify-content: center;
+        }
+
+        .actions button {
+            padding: 8px 16px;
+            font-size: 30px;
+            border-radius: 10px;
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .actions button:hover {
+            background-color: #1f8d4a;
+        }
+
+        .grid-container {
+            display: grid;
+            justify-content: center;
+            grid-gap: 16px;
+            grid-template-columns: repeat(6, 140px);
+            grid-template-rows: repeat(2, calc(140px / 2 * 3));
+            margin: auto;
+            margin-top: 20px;
+        }
+
+        .card {
+            height: calc(140px / 2 * 3);
+            width: 140px;
+            border-radius: 10px;
+            background-color: white;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: all 0.5s ease-in-out;
+            cursor: pointer;
+        }
+
+        .front-image {
+            width: 60px;
+            height: 60px;
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .front, .back {
+            backface-visibility: hidden;
+            position: absolute;
+            border-radius: 10px;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+        }
+
+        .card .front {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transform: rotateY(180deg);
+        }
+
+        .card .back {
+            background-color: #2c3e50;
+            backface-visibility: hidden;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Memory Cards</h1>
+    <div class="grid-container"></div>
+    <p>Score: <span class="score">0</span></p>
+    <div class="actions">
+        <button onclick="restart()">Restart</button>
+    </div>
+
+    <script>
+        const gridContainer = document.querySelector(".grid-container");
+let cards = [];
+let firstCard, secondCard;
+let lockBoard = false;
+let score = 0;
+let matchedPairs = 0;
+let totalPairs;
+let timer;
+let startTime;
+let elapsedTime = 0;
+
+document.querySelector(".score").textContent = score;
+const timerElement = document.createElement("p");
+timerElement.id = "timer";
+timerElement.textContent = "Time: 0s";
+document.body.insertBefore(timerElement, gridContainer);
+
+// Fetch card data from JSON file
+fetch("./data/cards.json")
+    .then(response => response.json())
+    .then(data => {
+        cards = [...data, ...data]; // Duplicate cards for matching pairs
+        totalPairs = data.length;
+        shuffleCards();
+        generateCards();
+        startTimer();
+    })
+    .catch(error => {
+        console.error("Error loading card data:", error);
+        alert("Error: Unable to load card data!");
+    });
+
+function shuffleCards() {
+    let currentIndex = cards.length, randomIndex, temporaryValue;
+    while (currentIndex !== 0) {
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex -= 1;
+        temporaryValue = cards[currentIndex];
+        cards[currentIndex] = cards[randomIndex];
+        cards[randomIndex] = temporaryValue;
+    }
+}
+
+function generateCards() {
+    gridContainer.innerHTML = "";
+    matchedPairs = 0;
+    for (let card of cards) {
+        const cardElement = document.createElement("div");
+        cardElement.classList.add("card");
+        cardElement.setAttribute("data-name", card.name);
+        cardElement.innerHTML = `
+            <div class="front">
+                <img class="front-image" src=${card.image} />
+            </div>
+            <div class="back"></div>
+        `;
+        gridContainer.appendChild(cardElement);
+        cardElement.addEventListener("click", flipCard);
+    }
+    startTimer(); // Start timer when game begins
+}
+
+
+function flipCard() {
+    if (lockBoard) return;
+    if (this === firstCard) return;
+
+    this.classList.add("flipped");
+
+    if (!firstCard) {
+        firstCard = this;
+        return;
+    }
+
+    secondCard = this;
+    lockBoard = true;
+
+    checkForMatch();
+}
+
+function checkForMatch() {
+    let isMatch = firstCard.dataset.name === secondCard.dataset.name;
+
+    if (isMatch) {
+        score++;
+        matchedPairs++; // Increase matched pairs count
+        document.querySelector(".score").textContent = score;
+        disableCards();
+        checkGameOver(); // Check if the game is finished
+    } else {
+        unflipCards();
+    }
+}
+
+function disableCards() {
+    firstCard.removeEventListener("click", flipCard);
+    secondCard.removeEventListener("click", flipCard);
+    resetBoard();
+}
+
+function unflipCards() {
+    setTimeout(() => {
+        firstCard.classList.remove("flipped");
+        secondCard.classList.remove("flipped");
+        resetBoard();
+    }, 1000);
+}
+
+function resetBoard() {
+    firstCard = null;
+    secondCard = null;
+    lockBoard = false;
+}
+
+function restart() {
+    resetBoard();
+    shuffleCards();
+    score = 0;
+    document.querySelector(".score").textContent = score;
+    generateCards();
+    resetTimer(); // Reset timer on restart
+}
+
+function startTimer() {
+    clearInterval(timer); // Clear previous timer
+    startTime = Date.now();
+    timer = setInterval(() => {
+        elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+        timerElement.textContent = `Time: ${elapsedTime}s`;
+    }, 1000);
+}
+
+function resetTimer() {
+    clearInterval(timer);
+    elapsedTime = 0;
+    timerElement.textContent = "Time: 0s";
+    startTimer();
+}
+
+let bestTime = localStorage.getItem("bestTime") || Infinity;
+function checkGameOver() {
+    if (matchedPairs === totalPairs) {
+        clearInterval(timer); // Stop the timer
+
+        // ✅ Get user ID from localStorage (set at login)
+        let userID = localStorage.getItem("userID");
+
+        if (!userID) {
+            alert("❌ Error: User ID is missing! Please log in.");
+            console.error("Error: userID is null.");
+            return;
+        }
+
+        // Prepare game data to send
+        const gameData = {
+            user_id: parseInt(userID), // Ensure it's an integer
+            score: score,
+            time_taken: elapsedTime
+        };
+
+        // ✅ Send game results to backend (game-service)
+        fetch("http://localhost:8083/game/submit", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`,  // Include token if needed
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(gameData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(`🎉 Game Over! You finished in ${elapsedTime} seconds with a score of ${score}!\n${data.message}`);
+        })
+        .catch(error => {
+            alert(`❌ Error submitting score: ${error.message}`);
+            console.error("Submit error:", error);
+        });
+
+        // ✅ Store best time
+        if (elapsedTime < bestTime) {
+            bestTime = elapsedTime;
+            localStorage.setItem("bestTime", bestTime);
+            alert(`🎉 New Best Time: ${elapsedTime} seconds!`);
+        }
+    }
+}
+
+    </script>
+
+</body>
+</html>

@@ -69,3 +69,13 @@ INSERT INTO doctors (email, password, name, license_number, hospital, is_verifie
 VALUES ('doctor@example.com', 'doctor123', 'Dr. John Doe', 'DOC123456', 'General Hospital', TRUE);
 
 
+CREATE TABLE IF NOT EXISTS game_scores (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    score INT NOT NULL,
+    level INT NOT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+ALTER TABLE game_scores ADD COLUMN time_taken INT NOT NULL DEFAULT 0;
