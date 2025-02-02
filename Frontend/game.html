@@ -247,20 +247,53 @@ function resetTimer() {
 }
 
 let bestTime = localStorage.getItem("bestTime") || Infinity;
-
 function checkGameOver() {
     if (matchedPairs === totalPairs) {
-        clearInterval(timer);
+        clearInterval(timer); // Stop the timer
 
+        // ✅ Get user ID from localStorage (set at login)
+        let userID = localStorage.getItem("userID");
+
+        if (!userID) {
+            alert("❌ Error: User ID is missing! Please log in.");
+            console.error("Error: userID is null.");
+            return;
+        }
+
+        // Prepare game data to send
+        const gameData = {
+            user_id: parseInt(userID), // Ensure it's an integer
+            score: score,
+            time_taken: elapsedTime
+        };
+
+        // ✅ Send game results to backend (game-service)
+        fetch("http://localhost:8083/game/submit", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`,  // Include token if needed
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(gameData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(`🎉 Game Over! You finished in ${elapsedTime} seconds with a score of ${score}!\n${data.message}`);
+        })
+        .catch(error => {
+            alert(`❌ Error submitting score: ${error.message}`);
+            console.error("Submit error:", error);
+        });
+
+        // ✅ Store best time
         if (elapsedTime < bestTime) {
             bestTime = elapsedTime;
             localStorage.setItem("bestTime", bestTime);
             alert(`🎉 New Best Time: ${elapsedTime} seconds!`);
-        } else {
-            alert(`🎉 Game Over! You finished in ${elapsedTime} seconds! Best Time: ${bestTime} seconds.`);
         }
     }
 }
+
     </script>
 
 </body>

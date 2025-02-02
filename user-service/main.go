@@ -3,7 +3,6 @@ package main
 import (
 	"CNAD_Assignment_2/user-service/database"
 	"CNAD_Assignment_2/user-service/handlers"
-	"CNAD_Assignment_2/user-service/notification"
 	"CNAD_Assignment_2/user-service/routes"
 
 	"fmt"
@@ -18,7 +17,8 @@ func main() {
 	database.InitDB()
 
 	// Call the notification function
-	notification.NotifyUsers()
+	//commenting this out for now because im changing up the accessments
+	// notification.NotifyUsers()
 
 	log.Println("Application has finished processing notifications.")
 

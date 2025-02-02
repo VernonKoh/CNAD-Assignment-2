@@ -13,6 +13,9 @@ func RegisterUserRoutes(router *mux.Router) {
 	userRouter.HandleFunc("/login", handlers.LoginUser).Methods("POST")
 	userRouter.HandleFunc("/verify", handlers.VerifyUser).Methods("GET") // Add this route for verification
 
+	userRouter.HandleFunc("/user_profile/{id}", handlers.GetUserProfile).Methods("GET")
+	userRouter.HandleFunc("/user_profile/{id}", handlers.UpdateUserProfile).Methods("PUT")
+
 	// Add doctor login route
 	userRouter.HandleFunc("/doctor/login", handlers.DoctorLogin).Methods("POST")
 
@@ -26,10 +29,14 @@ func RegisterUserRoutes(router *mux.Router) {
 	// Add the webhook route to handle FACEIO events
 	userRouter.HandleFunc("/faceio-webhook", handlers.HandleFaceIOWebhook).Methods("POST")
 
+	userRouter.HandleFunc("/questions", handlers.GetQuestions).Methods("GET")
+
 }
 
 //get user profile
-//http://localhost:8081/api/v1/users/2
+//http://localhost:8081/api/v1/users/user_profile/2
 
 //update user profile
 //curl -X PUT "http://localhost:8081/api/v1/users/user_profile/2" -H "Content-Type: application/json" -d "{\"email\": \"updated.email@example.com\", \"name\": \"Updated Name\", \"age\": 65, \"gender\": \"Male\", \"address\": \"123 Updated Address, City\", \"phone_number\": \"1234567890\"}"
+
+//curl -X GET http://localhost:8081/api/v1/users/questions
