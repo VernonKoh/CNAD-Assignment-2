@@ -34,3 +34,5 @@ func RegisterUserRoutes(router *mux.Router) {
 
 //update user profile
 //curl -X PUT "http://localhost:8081/api/v1/users/user_profile/2" -H "Content-Type: application/json" -d "{\"email\": \"updated.email@example.com\", \"name\": \"Updated Name\", \"age\": 65, \"gender\": \"Male\", \"address\": \"123 Updated Address, City\", \"phone_number\": \"1234567890\"}"
+
+//curl -X GET http://localhost:8081/api/v1/users/questions
