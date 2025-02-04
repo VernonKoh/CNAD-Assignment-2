@@ -30,6 +30,7 @@ func RegisterUserRoutes(router *mux.Router) {
 	userRouter.HandleFunc("/faceio-webhook", handlers.HandleFaceIOWebhook).Methods("POST")
 
 	userRouter.HandleFunc("/questions/{assessment_id}", handlers.GetQuestions).Methods("GET")
+	userRouter.HandleFunc("/assessments", handlers.GetAssessments).Methods("GET")
 
 }
 
@@ -41,3 +42,4 @@ func RegisterUserRoutes(router *mux.Router) {
 
 //get all questions and options for assessment
 //curl -X GET http://localhost:8081/api/v1/users/questions/1
+//curl -X GET http://localhost:8081/api/v1/users/assessments

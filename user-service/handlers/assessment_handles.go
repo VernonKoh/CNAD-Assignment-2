@@ -82,3 +82,33 @@ func GetQuestions(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(questions)
 }
+
+// Assessment struct
+type Assessment struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+// GetAssessments returns all available quizzes
+func GetAssessments(w http.ResponseWriter, r *http.Request) {
+	rows, err := database.DB.Query("SELECT id, name FROM assessments")
+
+	if err != nil {
+		http.Error(w, "Failed to fetch assessments", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var assessments []Assessment
+	for rows.Next() {
+		var a Assessment
+		if err := rows.Scan(&a.ID, &a.Name); err != nil {
+			http.Error(w, "Error scanning assessments", http.StatusInternalServerError)
+			return
+		}
+		assessments = append(assessments, a)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(assessments)
+}

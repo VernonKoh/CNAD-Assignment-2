@@ -39,27 +39,48 @@
             font-size: 18px;
             font-weight: bold;
         }
+        .submit-btn:disabled {
+            background: #ddd;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
 
     <h1>Quiz</h1>
     <div id="quiz-container"></div>
-    <button class="submit-btn" onclick="submitQuiz()">Submit</button>
+    <button class="submit-btn" id="submit-btn" onclick="submitQuiz()" disabled>Submit</button>
     <div id="result"></div>
 
     <script>
+        // Function to extract quizId from the URL query parameters
+        function getQuizIdFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('quizId');
+        }
+
+        // Function to load the quiz based on the quizId
         async function loadQuiz() {
+            const quizId = getQuizIdFromURL();
+            if (!quizId) {
+                alert("No quizId provided in the URL.");
+                window.location.href = "selectassessment.html"; // Change to your desired page URL
+                return;
+            }
+
             try {
-                const response = await fetch("http://localhost:8081/api/v1/users/questions/1");
+                // Dynamically fetch the quiz based on the quizId
+                const response = await fetch(`http://localhost:8081/api/v1/users/questions/${quizId}`);
                 const questions = await response.json();
                 const quizContainer = document.getElementById("quiz-container");
-                
+                const submitButton = document.getElementById("submit-btn");
+
                 quizContainer.innerHTML = ""; // Clear previous content
-                
+
                 questions.forEach((question, index) => {
                     const questionDiv = document.createElement("div");
                     questionDiv.classList.add("question-container");
+                    questionDiv.dataset.index = index; // Add index to questionDiv for easy tracking
 
                     let optionsHTML = "";
                     question.options.forEach(option => {
@@ -77,13 +98,32 @@
                     `;
 
                     quizContainer.appendChild(questionDiv);
+
+                    // Add event listener to check if a question is answered
+                    questionDiv.addEventListener("change", () => {
+                        checkAllQuestionsAnswered();
+                    });
                 });
+
+                // Initial check to disable submit if not all questions are answered
+                checkAllQuestionsAnswered();
 
             } catch (error) {
                 console.error("Error loading quiz:", error);
             }
         }
 
+        // Check if all questions have a selected option
+        function checkAllQuestionsAnswered() {
+            const allAnswered = [...document.querySelectorAll('.question-container')].every((questionDiv) => {
+                return questionDiv.querySelector('input[type="radio"]:checked') !== null;
+            });
+
+            // Enable or disable the submit button based on whether all questions are answered
+            document.getElementById("submit-btn").disabled = !allAnswered;
+        }
+
+        // Submit the quiz
         function submitQuiz() {
             let totalRiskScore = 0;
             const questions = document.querySelectorAll(".question-container");
