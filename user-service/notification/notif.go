@@ -37,10 +37,10 @@ func NotifyUsers() {
 
 	// High-Risk Alerts
 	queryHighRisk := `
-		SELECT u.email, a.risk_level, a.assessment_date
-		FROM assessments a
-		JOIN users u ON a.user_id = u.id
-		WHERE a.risk_level = 'High'
+	SELECT u.email, c.total_risk_score, c.completed_at
+	FROM CompletedAssessments c
+	JOIN users u ON c.user_id = u.id
+	WHERE c.total_risk_score >= 4 AND c.total_risk_score <= 5
 	`
 	rows, err := database.DB.Query(queryHighRisk)
 	if err != nil {
