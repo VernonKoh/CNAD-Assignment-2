@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 
+	gorillaHandlers "github.com/gorilla/handlers" // ✅ Rename to avoid conflict
 	"github.com/gorilla/mux"
 )
 
@@ -41,7 +42,14 @@ func main() {
 	staticDir := "../frontend" // Path to the directory containing `index.html`
 	r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir(staticDir))))
 
-	// Start the server
+	// ✅ Enable CORS
+	corsMiddleware := gorillaHandlers.CORS( // ✅ Use `gorillaHandlers` instead of `handlers`
+		gorillaHandlers.AllowedOrigins([]string{"*"}),
+		gorillaHandlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}),
+		gorillaHandlers.AllowedHeaders([]string{"Content-Type", "Authorization"}),
+	)
+
+	// Start the server with CORS enabled
 	fmt.Println("Server is running on http://localhost:8081")
-	log.Fatal(http.ListenAndServe(":8081", r))
+	log.Fatal(http.ListenAndServe(":8081", corsMiddleware(r)))
 }

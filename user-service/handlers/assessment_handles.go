@@ -3,7 +3,10 @@ package handlers
 import (
 	"CNAD_Assignment_2/user-service/database"
 	"encoding/json"
+	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 // Question represents a single question with options
@@ -23,19 +26,27 @@ type Option struct {
 
 // Fetch all questions and their options
 func GetQuestions(w http.ResponseWriter, r *http.Request) {
-	rows, err := database.DB.Query(`
-		SELECT q.id, q.question_text, q.type, o.id, o.option_text, o.risk_value
-		FROM Questions q
-		LEFT JOIN Options o ON q.id = o.question_id
-		WHERE q.assessment_id = 1
-		ORDER BY q.id ASC, o.id ASC;
-	`)
+	vars := mux.Vars(r) // Extract URL parameters
+	assessmentID, ok := vars["assessment_id"]
+	if !ok {
+		http.Error(w, "Missing assessment ID", http.StatusBadRequest)
+		return
+	}
+	// Prepare the SQL query with dynamic assessment_id
+	query := `
+	SELECT q.id, q.question_text, q.type, o.id, o.option_text, o.risk_value
+	FROM Questions q
+	LEFT JOIN Options o ON q.id = o.question_id
+	WHERE q.assessment_id = ?
+	ORDER BY q.id ASC, o.id ASC;
+	`
+
+	rows, err := database.DB.Query(query, assessmentID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Database query error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
-
 	questionsMap := make(map[int]*Question)
 
 	for rows.Next() {
@@ -66,6 +77,7 @@ func GetQuestions(w http.ResponseWriter, r *http.Request) {
 	for _, q := range questionsMap {
 		questions = append(questions, *q)
 	}
+	log.Printf("Fetched assessment: ID=%s", assessmentID)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(questions)

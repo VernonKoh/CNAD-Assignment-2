@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+        }
+        .question-container {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .options label {
+            display: block;
+            margin: 5px 0;
+            cursor: pointer;
+        }
+        .submit-btn {
+            display: block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .submit-btn:hover {
+            background: #0056b3;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Quiz</h1>
+    <div id="quiz-container"></div>
+    <button class="submit-btn" onclick="submitQuiz()">Submit</button>
+    <div id="result"></div>
+
+    <script>
+        async function loadQuiz() {
+            try {
+                const response = await fetch("http://localhost:8081/api/v1/users/questions/1");
+                const questions = await response.json();
+                const quizContainer = document.getElementById("quiz-container");
+                
+                quizContainer.innerHTML = ""; // Clear previous content
+                
+                questions.forEach((question, index) => {
+                    const questionDiv = document.createElement("div");
+                    questionDiv.classList.add("question-container");
+
+                    let optionsHTML = "";
+                    question.options.forEach(option => {
+                        optionsHTML += `
+                            <label>
+                                <input type="radio" name="question${index}" value="${option.risk_value}">
+                                ${option.option_text}
+                            </label>
+                        `;
+                    });
+
+                    questionDiv.innerHTML = `
+                        <p><strong>${index + 1}. ${question.question_text}</strong></p>
+                        <div class="options">${optionsHTML}</div>
+                    `;
+
+                    quizContainer.appendChild(questionDiv);
+                });
+
+            } catch (error) {
+                console.error("Error loading quiz:", error);
+            }
+        }
+
+        function submitQuiz() {
+            let totalRiskScore = 0;
+            const questions = document.querySelectorAll(".question-container");
+
+            questions.forEach((question, index) => {
+                const selectedOption = document.querySelector(`input[name="question${index}"]:checked`);
+                if (selectedOption) {
+                    totalRiskScore += parseInt(selectedOption.value);
+                }
+            });
+
+            document.getElementById("result").innerText = `Your total risk score is: ${totalRiskScore}`;
+        }
+
+        // Load the quiz when the page loads
+        loadQuiz();
+    </script>
+
+</body>
+</html>
