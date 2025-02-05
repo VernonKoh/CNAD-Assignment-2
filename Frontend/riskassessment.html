@@ -53,40 +53,40 @@
     <div id="result"></div>
 
     <script>
-        // Function to extract quizId from the URL query parameters
+        let assessmentId; // Store assessment ID globally
+
         function getQuizIdFromURL() {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get('quizId');
         }
 
-        // Function to load the quiz based on the quizId
         async function loadQuiz() {
-            const quizId = getQuizIdFromURL();
-            if (!quizId) {
+            assessmentId = getQuizIdFromURL();
+            if (!assessmentId) {
                 alert("No quizId provided in the URL.");
-                window.location.href = "selectassessment.html"; // Change to your desired page URL
+                window.location.href = "selectassessment.html"; 
                 return;
             }
 
             try {
-                // Dynamically fetch the quiz based on the quizId
-                const response = await fetch(`http://localhost:8081/api/v1/users/questions/${quizId}`);
+                const response = await fetch(`http://localhost:8081/api/v1/users/questions/${assessmentId}`);
                 const questions = await response.json();
                 const quizContainer = document.getElementById("quiz-container");
-                const submitButton = document.getElementById("submit-btn");
 
-                quizContainer.innerHTML = ""; // Clear previous content
+                quizContainer.innerHTML = ""; 
 
                 questions.forEach((question, index) => {
                     const questionDiv = document.createElement("div");
                     questionDiv.classList.add("question-container");
-                    questionDiv.dataset.index = index; // Add index to questionDiv for easy tracking
-
+                    questionDiv.dataset.index = index;
+                    
                     let optionsHTML = "";
                     question.options.forEach(option => {
                         optionsHTML += `
                             <label>
-                                <input type="radio" name="question${index}" value="${option.risk_value}">
+                                <input type="radio" name="question${index}" 
+                                    value="${option.risk_value}" 
+                                    data-option-id="${option.id}">
                                 ${option.option_text}
                             </label>
                         `;
@@ -99,46 +99,73 @@
 
                     quizContainer.appendChild(questionDiv);
 
-                    // Add event listener to check if a question is answered
                     questionDiv.addEventListener("change", () => {
                         checkAllQuestionsAnswered();
                     });
                 });
 
-                // Initial check to disable submit if not all questions are answered
                 checkAllQuestionsAnswered();
 
             } catch (error) {
                 console.error("Error loading quiz:", error);
+                window.location.href = "selectassessment.html"; 
             }
         }
 
-        // Check if all questions have a selected option
         function checkAllQuestionsAnswered() {
             const allAnswered = [...document.querySelectorAll('.question-container')].every((questionDiv) => {
                 return questionDiv.querySelector('input[type="radio"]:checked') !== null;
             });
 
-            // Enable or disable the submit button based on whether all questions are answered
             document.getElementById("submit-btn").disabled = !allAnswered;
         }
 
-        // Submit the quiz
-        function submitQuiz() {
+        async function submitQuiz() {
             let totalRiskScore = 0;
+            let selectedOptions = [];
             const questions = document.querySelectorAll(".question-container");
 
             questions.forEach((question, index) => {
                 const selectedOption = document.querySelector(`input[name="question${index}"]:checked`);
                 if (selectedOption) {
+                    console.log(selectedOption)
                     totalRiskScore += parseInt(selectedOption.value);
+                    selectedOptions.push(parseInt(selectedOption.dataset.optionId)); // Correctly access data-option-id
                 }
             });
+            console.log(totalRiskScore)
+            console.log(selectedOptions)
+            
+            
+            const userID = localStorage.getItem('userID');
 
-            document.getElementById("result").innerText = `Your total risk score is: ${totalRiskScore}`;
+            const payload = {
+                assessment_id: parseInt(assessmentId),
+                user_id: parseInt(userID), // Replace with the actual user ID
+                total_risk_score: totalRiskScore,
+                option_ids: selectedOptions
+            };
+            try {
+                const response = await fetch("http://localhost:8081/api/v1/users/submit-assessment", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById("result").innerText = `Assessment Submitted! Risk Score: ${totalRiskScore}`;
+                } else {
+                    document.getElementById("result").innerText = "Failed to submit assessment.";
+                }
+            } catch (error) {
+                console.error("Error submitting quiz:", error);
+                document.getElementById("result").innerText = "Error connecting to server.";
+            }
         }
 
-        // Load the quiz when the page loads
         loadQuiz();
     </script>
 

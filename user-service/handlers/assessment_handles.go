@@ -3,8 +3,10 @@ package handlers
 import (
 	"CNAD_Assignment_2/user-service/database"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -111,4 +113,49 @@ func GetAssessments(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(assessments)
+}
+
+type Submission struct {
+	AssessmentID int   `json:"assessment_id"`
+	UserID       int   `json:"user_id"`
+	TotalRisk    int   `json:"total_risk"`
+	OptionIDs    []int `json:"option_ids"`
+}
+
+// Save assessment submission
+func SubmitAssessment(w http.ResponseWriter, r *http.Request) {
+	var submission Submission
+	err := json.NewDecoder(r.Body).Decode(&submission)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Step 1: Insert into CompletedAssessments
+	result, err := database.DB.Exec("INSERT INTO CompletedAssessments (assessment_id, user_id, total_risk_score, completed_at) VALUES (?, ?, ?, ?)",
+		submission.AssessmentID, submission.UserID, submission.TotalRisk, time.Now())
+	if err != nil {
+		http.Error(w, "Failed to insert assessment", http.StatusInternalServerError)
+		return
+	}
+
+	completedID, err := result.LastInsertId()
+	if err != nil {
+		http.Error(w, "Failed to get last inserted ID", http.StatusInternalServerError)
+		return
+	}
+
+	// Step 2: Insert into SelectedOptions
+	for _, optionID := range submission.OptionIDs {
+		_, err := database.DB.Exec("INSERT INTO SelectedOptions (completed_id, option_id) VALUES (?, ?)", completedID, optionID)
+		if err != nil {
+			http.Error(w, "Failed to insert selected options", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Success response
+	w.WriteHeader(http.StatusCreated)
+	fmt.Fprint(w, `{"message": "Assessment submitted successfully"}`)
+	log.Printf("Assessment submitted successfully")
 }

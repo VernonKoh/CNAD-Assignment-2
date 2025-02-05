@@ -31,6 +31,7 @@ func RegisterUserRoutes(router *mux.Router) {
 
 	userRouter.HandleFunc("/questions/{assessment_id}", handlers.GetQuestions).Methods("GET")
 	userRouter.HandleFunc("/assessments", handlers.GetAssessments).Methods("GET")
+	userRouter.HandleFunc("/submit-assessment", handlers.SubmitAssessment).Methods("POST")
 
 }
 
