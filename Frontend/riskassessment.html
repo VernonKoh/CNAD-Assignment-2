@@ -142,9 +142,11 @@
             const payload = {
                 assessment_id: parseInt(assessmentId),
                 user_id: parseInt(userID), // Replace with the actual user ID
-                total_risk_score: totalRiskScore,
+                total_risk: totalRiskScore,
                 option_ids: selectedOptions
             };
+            console.log("Payload before sending:", payload);
+
             try {
                 const response = await fetch("http://localhost:8081/api/v1/users/submit-assessment", {
                     method: "POST",
