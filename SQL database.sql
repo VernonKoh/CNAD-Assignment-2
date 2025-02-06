@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS users (
     facial_id VARCHAR(255) NULL,  -- ✅ Added column for storing facial ID
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+ALTER TABLE users ADD COLUMN high_risk BOOLEAN DEFAULT FALSE;
 
 CREATE TABLE IF NOT EXISTS user_details (
     id INT AUTO_INCREMENT PRIMARY KEY,

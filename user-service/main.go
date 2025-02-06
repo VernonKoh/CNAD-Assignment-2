@@ -27,11 +27,13 @@ func main() {
 	ticker := time.NewTicker(1 * time.Hour) // Runs every 1 hour
 	defer ticker.Stop()
 
-	for {
-		<-ticker.C // Wait for the next tick (1 hour)
-		log.Println("Running scheduled high-risk check...")
-		notification.NotifyUsers()
-	}
+	go func() { // ✅ Run in a separate goroutine
+		for {
+			<-ticker.C // Wait for the next tick (1 hour)
+			log.Println("Running scheduled high-risk check...")
+			notification.NotifyUsers()
+		}
+	}()
 
 	// Create a new router
 	r := mux.NewRouter()

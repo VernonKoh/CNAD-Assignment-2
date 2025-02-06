@@ -159,3 +159,27 @@ func SubmitAssessment(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, `{"message": "Assessment submitted successfully"}`)
 	log.Printf("Assessment submitted successfully")
 }
+
+func UpdateHighRiskStatus(w http.ResponseWriter, r *http.Request) {
+	// Parse request body
+	var request struct {
+		UserID   int  `json:"user_id"`
+		HighRisk bool `json:"high_risk"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+	// Update high risk status
+	query := "UPDATE users SET high_risk = ? WHERE id = ?"
+	_, err := database.DB.Exec(query, request.HighRisk, request.UserID)
+	if err != nil {
+		http.Error(w, "Failed to update user", http.StatusInternalServerError)
+		return
+	}
+
+	// Success response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "User high risk status updated successfully"})
+}

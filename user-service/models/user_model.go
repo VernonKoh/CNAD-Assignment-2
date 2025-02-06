@@ -20,6 +20,7 @@ type UserProfile struct {
 	Email       string `json:"email"`
 	Name        string `json:"name"`
 	Role        string `json:"role"`
+	HighRisk    bool   `json:"high_risk"` // New field
 	Age         int    `json:"age"`
 	Gender      string `json:"gender"`
 	Address     string `json:"address"`

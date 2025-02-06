@@ -32,6 +32,7 @@ func RegisterUserRoutes(router *mux.Router) {
 	userRouter.HandleFunc("/questions/{assessment_id}", handlers.GetQuestions).Methods("GET")
 	userRouter.HandleFunc("/assessments", handlers.GetAssessments).Methods("GET")
 	userRouter.HandleFunc("/submit-assessment", handlers.SubmitAssessment).Methods("POST")
+	userRouter.HandleFunc("/update-high-risk", handlers.UpdateHighRiskStatus).Methods("POST")
 
 }
 
@@ -44,3 +45,6 @@ func RegisterUserRoutes(router *mux.Router) {
 //get all questions and options for assessment
 //curl -X GET http://localhost:8081/api/v1/users/questions/1
 //curl -X GET http://localhost:8081/api/v1/users/assessments
+
+//change user to high risk
+//curl -X POST "http://localhost:8081/api/v1/users/update-high-risk" -H "Content-Type: application/json" -d "{\"user_id\": 4, \"high_risk\": true}"

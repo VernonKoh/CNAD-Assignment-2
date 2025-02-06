@@ -21,7 +21,7 @@
             margin: 5px 0;
             cursor: pointer;
         }
-        .submit-btn {
+        .submit-btn, .home-btn {
             display: block;
             margin-top: 20px;
             padding: 10px 20px;
@@ -31,18 +31,11 @@
             cursor: pointer;
             font-size: 16px;
         }
-        .submit-btn:hover {
-            background: #0056b3;
-        }
-        #result {
-            margin-top: 20px;
-            font-size: 18px;
-            font-weight: bold;
-        }
-        .submit-btn:disabled {
-            background: #ddd;
-            cursor: not-allowed;
-        }
+        .submit-btn:hover { background: #0056b3; }
+        .submit-btn:disabled { background: #ddd; cursor: not-allowed; }
+        .home-btn { background: #28a745; display: none; }
+        .home-btn:hover { background: #218838; }
+        #result { margin-top: 20px; font-size: 18px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -50,11 +43,11 @@
     <h1>Quiz</h1>
     <div id="quiz-container"></div>
     <button class="submit-btn" id="submit-btn" onclick="submitQuiz()" disabled>Submit</button>
+    <button class="home-btn" id="home-btn" onclick="window.location.href='welcome.html'">Return to Home</button>
     <div id="result"></div>
 
     <script>
-        let assessmentId; // Store assessment ID globally
-
+        let assessmentId;
         function getQuizIdFromURL() {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get('quizId');
@@ -74,7 +67,6 @@
                 const quizContainer = document.getElementById("quiz-container");
 
                 quizContainer.innerHTML = ""; 
-
                 questions.forEach((question, index) => {
                     const questionDiv = document.createElement("div");
                     questionDiv.classList.add("question-container");
@@ -84,24 +76,17 @@
                     question.options.forEach(option => {
                         optionsHTML += `
                             <label>
-                                <input type="radio" name="question${index}" 
-                                    value="${option.risk_value}" 
-                                    data-option-id="${option.id}">
+                                <input type="radio" name="question${index}" value="${option.risk_value}" data-option-id="${option.id}">
                                 ${option.option_text}
-                            </label>
-                        `;
+                            </label>`;
                     });
 
                     questionDiv.innerHTML = `
                         <p><strong>${index + 1}. ${question.question_text}</strong></p>
-                        <div class="options">${optionsHTML}</div>
-                    `;
+                        <div class="options">${optionsHTML}</div>`;
 
                     quizContainer.appendChild(questionDiv);
-
-                    questionDiv.addEventListener("change", () => {
-                        checkAllQuestionsAnswered();
-                    });
+                    questionDiv.addEventListener("change", checkAllQuestionsAnswered);
                 });
 
                 checkAllQuestionsAnswered();
@@ -116,7 +101,6 @@
             const allAnswered = [...document.querySelectorAll('.question-container')].every((questionDiv) => {
                 return questionDiv.querySelector('input[type="radio"]:checked') !== null;
             });
-
             document.getElementById("submit-btn").disabled = !allAnswered;
         }
 
@@ -128,43 +112,60 @@
             questions.forEach((question, index) => {
                 const selectedOption = document.querySelector(`input[name="question${index}"]:checked`);
                 if (selectedOption) {
-                    console.log(selectedOption)
                     totalRiskScore += parseInt(selectedOption.value);
-                    selectedOptions.push(parseInt(selectedOption.dataset.optionId)); // Correctly access data-option-id
+                    selectedOptions.push(parseInt(selectedOption.dataset.optionId));
                 }
             });
-            console.log(totalRiskScore)
-            console.log(selectedOptions)
-            
             
             const userID = localStorage.getItem('userID');
-
             const payload = {
                 assessment_id: parseInt(assessmentId),
-                user_id: parseInt(userID), // Replace with the actual user ID
+                user_id: parseInt(userID),
                 total_risk: totalRiskScore,
                 option_ids: selectedOptions
             };
-            console.log("Payload before sending:", payload);
 
             try {
                 const response = await fetch("http://localhost:8081/api/v1/users/submit-assessment", {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(payload)
                 });
 
                 if (response.ok) {
-                    const data = await response.json();
-                    document.getElementById("result").innerText = `Assessment Submitted! Risk Score: ${totalRiskScore}`;
+                    let riskMessage = totalRiskScore > 10 
+                    ? "Risk Score: High" 
+                    : "Risk Score: Low";
+                    document.getElementById("result").innerText = `Assessment Submitted! Risk Score: ${totalRiskScore} (${riskMessage})`;
+                    document.getElementById("submit-btn").style.display = "none";
+                    document.getElementById("home-btn").style.display = "block";
+
+                    if (totalRiskScore > 10) {
+                        await updateHighRiskStatus(userID);
+                    }
                 } else {
                     document.getElementById("result").innerText = "Failed to submit assessment.";
                 }
             } catch (error) {
                 console.error("Error submitting quiz:", error);
                 document.getElementById("result").innerText = "Error connecting to server.";
+            }
+        }
+
+        async function updateHighRiskStatus(userID) {
+            try {
+                const response = await fetch("http://localhost:8081/api/v1/users/update-high-risk", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ user_id: parseInt(userID), high_risk: true })
+                });
+                if (response.ok) {
+                    console.log("High-risk status updated.");
+                } else {
+                    console.error("Failed to update high-risk status.");
+                }
+            } catch (error) {
+                console.error("Error updating high-risk status:", error);
             }
         }
 

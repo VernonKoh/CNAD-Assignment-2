@@ -103,8 +103,9 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Insert the user into the users table
-	query := "INSERT INTO users (email, password, name, role, verification_token) VALUES (?, ?, ?, ?, ?)"
-	result, err := tx.Exec(query, user.Email, user.Password, user.Name, user.Role, token)
+	query := "INSERT INTO users (email, password, name, role, verification_token, high_risk) VALUES (?, ?, ?, ?, ?, ?)"
+	result, err := tx.Exec(query, user.Email, user.Password, user.Name, user.Role, token, false) // Default: false
+
 	if err != nil {
 		tx.Rollback()
 		log.Printf("Error inserting user into database: %v", err)
@@ -302,17 +303,16 @@ func GetUserProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var profile models.UserProfile
-
-	// Fetch user data and details from the database
+	// Fetch user data and details from the database, including high_risk status
 	query := `
-		SELECT 
-			u.id, u.email, u.name, u.role, 
-			ud.age, ud.gender, ud.address, ud.phone_number
-		FROM users u
-		LEFT JOIN user_details ud ON u.id = ud.user_id
-		WHERE u.id = ?`
+	SELECT 
+		u.id, u.email, u.name, u.role, u.high_risk,
+		ud.age, ud.gender, ud.address, ud.phone_number
+	FROM users u
+	LEFT JOIN user_details ud ON u.id = ud.user_id
+	WHERE u.id = ?`
 	err = database.DB.QueryRow(query, userID).Scan(
-		&profile.ID, &profile.Email, &profile.Name, &profile.Role,
+		&profile.ID, &profile.Email, &profile.Name, &profile.Role, &profile.HighRisk, // Include high_risk
 		&profile.Age, &profile.Gender, &profile.Address, &profile.PhoneNumber,
 	)
 	if err != nil {

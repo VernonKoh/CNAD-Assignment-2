@@ -38,6 +38,7 @@
       <p id="userName">Hello, User!</p>
       <p><strong>User ID:</strong> <span id="userID"></span></p>
       <p><strong>JWT Token:</strong> <span id="jwtToken"></span></p>
+      <p><strong>High Risk Status:</strong> <span id="highRisk"></span></p>
     </div>
 
     <div id="form-container">
@@ -85,6 +86,7 @@
         document.getElementById('userName').textContent = `Hello, ${userName}!`;
         document.getElementById('userID').textContent = userID;
         document.getElementById('jwtToken').textContent = jwtToken;
+        
       } else {
         alert('User not logged in!');
         window.location.href = "login.html";
@@ -110,6 +112,7 @@
           document.getElementById('gender').value = userData.gender;
           document.getElementById('address').value = userData.address;
           document.getElementById('phone_number').value = userData.phone_number;
+          document.getElementById('highRisk').textContent = userData.high_risk ? "Yes" : "No";
         } catch (error) {
           console.error(error);
           alert("Error fetching user profile. Please try again later.");
