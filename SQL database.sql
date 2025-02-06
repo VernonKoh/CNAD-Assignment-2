@@ -149,4 +149,8 @@ VALUES
 
     -- Options for question 5 (smoking) in Assessment 1
     (1, 4, 'Yes', 3),
-    (1, 4, 'No', 0)
+    (1, 4, 'No', 0);
+    
+    
+-- Set Column to FALSE, once email is sent update to TRUE
+ALTER TABLE CompletedAssessments ADD COLUMN notified BOOLEAN DEFAULT FALSE;

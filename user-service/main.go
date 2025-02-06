@@ -3,11 +3,13 @@ package main
 import (
 	"CNAD_Assignment_2/user-service/database"
 	"CNAD_Assignment_2/user-service/handlers"
+	"CNAD_Assignment_2/user-service/notification"
 	"CNAD_Assignment_2/user-service/routes"
 
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	gorillaHandlers "github.com/gorilla/handlers" // ✅ Rename to avoid conflict
 	"github.com/gorilla/mux"
@@ -17,11 +19,19 @@ func main() {
 	// Initialize the database
 	database.InitDB()
 
-	// Call the notification function
-	//commenting this out for now because im changing up the accessments
-	// notification.NotifyUsers()
+	// Run the check immediately on startup
+	log.Println("Running initial high-risk check...")
+	notification.NotifyUsers()
 
-	log.Println("Application has finished processing notifications.")
+	// Schedule the function to run every hour
+	ticker := time.NewTicker(1 * time.Hour) // Runs every 1 hour
+	defer ticker.Stop()
+
+	for {
+		<-ticker.C // Wait for the next tick (1 hour)
+		log.Println("Running scheduled high-risk check...")
+		notification.NotifyUsers()
+	}
 
 	// Create a new router
 	r := mux.NewRouter()
