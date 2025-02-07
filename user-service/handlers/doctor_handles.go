@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 // DoctorLogin handles login for doctors
@@ -69,4 +71,94 @@ func DoctorLogin(w http.ResponseWriter, r *http.Request) {
 		"userID": doctor.ID,
 		"name":   doctor.Name,
 	})
+}
+
+// SearchUsers handles the search request for users by name
+func SearchUsers(w http.ResponseWriter, r *http.Request) {
+	// Parse the query parameter 'name'
+	query := r.URL.Query().Get("name")
+	if query == "" {
+		http.Error(w, "Query parameter 'name' is required", http.StatusBadRequest)
+		return
+	}
+
+	// Query the database for users with names matching the search term
+	rows, err := database.DB.Query(`
+		SELECT id, name, high_risk
+		FROM users
+		WHERE name LIKE ?
+	`, "%"+query+"%")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var users []struct {
+		ID       int    `json:"id"`
+		Name     string `json:"name"`
+		HighRisk bool   `json:"high_risk"`
+	}
+
+	// Loop through the rows and append to the users slice
+	for rows.Next() {
+		var user struct {
+			ID       int    `json:"id"`
+			Name     string `json:"name"`
+			HighRisk bool   `json:"high_risk"`
+		}
+		err := rows.Scan(&user.ID, &user.Name, &user.HighRisk)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		users = append(users, user)
+	}
+
+	// Return the list of users as JSON
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(users)
+}
+
+// Struct for Completed Assessment
+type CompletedAssessment struct {
+	ID             int    `json:"id"`
+	AssessmentID   int    `json:"assessment_id"`
+	UserID         int    `json:"user_id"`
+	TotalRiskScore int    `json:"total_risk_score"`
+	CompletedAt    string `json:"completed_at"`
+}
+
+// Handler to fetch completed assessments by user_id
+func GetCompletedAssessments(w http.ResponseWriter, r *http.Request) {
+	// Get user_id from URL query params
+	userID := mux.Vars(r)["userid"]
+	if userID == "" {
+		http.Error(w, "User ID is required", http.StatusBadRequest)
+		return
+	}
+
+	// Query the database
+	query := "SELECT id, assessment_id, user_id, total_risk_score, completed_at FROM completedassessments WHERE user_id = ?"
+	rows, err := database.DB.Query(query, userID)
+	if err != nil {
+		http.Error(w, "Failed to fetch data", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	// Store results in a slice
+	var assessments []CompletedAssessment
+	for rows.Next() {
+		var assessment CompletedAssessment
+		if err := rows.Scan(&assessment.ID, &assessment.AssessmentID, &assessment.UserID, &assessment.TotalRiskScore, &assessment.CompletedAt); err != nil {
+			http.Error(w, "Error scanning row", http.StatusInternalServerError)
+			return
+		}
+		assessments = append(assessments, assessment)
+	}
+
+	// Convert to JSON and send response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(assessments)
 }

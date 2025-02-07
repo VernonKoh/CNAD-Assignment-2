@@ -31,10 +31,19 @@ func RegisterUserRoutes(router *mux.Router) {
 
 	userRouter.HandleFunc("/questions/{assessment_id}", handlers.GetQuestions).Methods("GET")
 	userRouter.HandleFunc("/assessments", handlers.GetAssessments).Methods("GET")
+	userRouter.HandleFunc("/assessments/{assessmentid}", handlers.GetAssessmentByID).Methods("GET")
+
 	userRouter.HandleFunc("/submit-assessment", handlers.SubmitAssessment).Methods("POST")
 	userRouter.HandleFunc("/update-high-risk", handlers.UpdateHighRiskStatus).Methods("POST")
 
+	//doctor functions
+	userRouter.HandleFunc("/search", handlers.SearchUsers).Methods("GET")
+	userRouter.HandleFunc("/completed_assessments/{userid}", handlers.GetCompletedAssessments).Methods("GET")
+
 }
+
+//access mysql
+//mysql -u root -p
 
 //get user profile
 //http://localhost:8081/api/v1/users/user_profile/2
@@ -48,3 +57,9 @@ func RegisterUserRoutes(router *mux.Router) {
 
 //change user to high risk
 //curl -X POST "http://localhost:8081/api/v1/users/update-high-risk" -H "Content-Type: application/json" -d "{\"user_id\": 4, \"high_risk\": true}"
+
+//search for patients
+//http://localhost:8081/api/v1/users/search?name=e
+
+//Get all of User's completed assessments
+//http://localhost:8081/api/v1/users/completed_assessments/4

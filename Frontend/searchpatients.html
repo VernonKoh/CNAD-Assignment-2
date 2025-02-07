@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Search</title>
+    <style>
+        /* Simple styling for the search bar and results */
+        #search-results {
+            margin-top: 20px;
+        }
+
+        .user-result {
+            cursor: pointer;
+            padding: 10px;
+            border: 1px solid #ccc;
+            margin-bottom: 5px;
+        }
+
+        .user-result:hover {
+            background-color: #f0f0f0;
+        }
+
+        #user-details {
+            margin-top: 20px;
+            display: none; /* Hide details by default */
+        }
+
+        .user-result.active {
+            background-color: #e0e0e0; /* Highlight the active user */
+        }
+    </style>
+</head>
+<body>
+    <h1>User Search</h1>
+    <input type="text" id="search-bar" placeholder="Search users by name...">
+    <div id="search-results"></div>
+    <div id="user-details"></div>
+
+    <script>
+        document.getElementById("search-bar").addEventListener("input", function() {
+        const query = this.value;
+
+        const resultsDiv = document.getElementById("search-results");
+
+        // Clear results if the search bar is empty
+        if (query.length === 0) {
+            resultsDiv.innerHTML = "";  // Clear the displayed results
+            document.getElementById("user-details").style.display = "none";  // Hide the user details section
+            return;  // Stop further processing
+        }
+
+        // Trigger search when there's input
+        fetch(`/api/v1/users/search?name=${query}`)
+            .then(response => response.json())
+            .then(users => {
+                // Clear the current results
+                resultsDiv.innerHTML = "";
+                
+                // Display the results
+                users.forEach(user => {
+                const userDiv = document.createElement("div");
+                userDiv.classList.add("user-result");
+
+                // Create an emoji based on the risk level
+                const riskEmoji = user.high_risk ? "🟥" : "🟩";  // Red for High Risk, Green for Low Risk
+
+                // Create the "Check Assessment" button
+                const checkButton = document.createElement("button");
+                checkButton.innerText = "Check Assessment";
+                checkButton.onclick = () => {
+                    window.location.href = `/completed_assessments.html?userid=${user.id}`;  // Redirect to completed assessments page
+                };
+
+                // Set the inner HTML of the user div
+                userDiv.innerHTML = `${user.name} - ${riskEmoji} ${user.high_risk ? "High Risk" : "Low Risk"}`;
+
+                // Append the "Check Assessment" button to the user div
+                userDiv.appendChild(checkButton);
+                    // Show user details on hover
+                    userDiv.onmouseover = () => {
+                        userDiv.classList.add("active");
+                        displayUserDetails(user.id);  // Call to show user details
+                    };
+
+                    // Hide user details on mouse out
+                    userDiv.onmouseout = () => {
+                        userDiv.classList.remove("active");
+                        hideUserDetails();  // Hide the user details
+                    };
+
+                    resultsDiv.appendChild(userDiv);
+                });
+            })
+            .catch(error => console.error('Error fetching user data:', error));
+    });
+
+
+        function displayUserDetails(userId) {
+            // Show the user details dynamically
+            fetch(`/api/v1/users/user_profile/${userId}`)
+                .then(response => response.json())
+                .then(user => {
+                    const detailsDiv = document.getElementById("user-details");
+                    detailsDiv.innerHTML = `
+                        <h3>User Details</h3>
+                        <p><strong>Name:</strong> ${user.name}</p>
+                        <p><strong>Email:</strong> ${user.email}</p>
+                        <p><strong>Role:</strong> ${user.role}</p>
+                        <p><strong>Verification Status:</strong> ${user.is_verified ? "Verified" : "Not Verified"}</p>
+                        <p><strong>Facial ID:</strong> ${user.facial_id || "Not Provided"}</p>
+                    `;
+                    detailsDiv.style.display = "block";  // Show the details section
+                })
+                .catch(error => console.error('Error fetching user details:', error));
+        }
+
+        function hideUserDetails() {
+            const detailsDiv = document.getElementById("user-details");
+            detailsDiv.style.display = "none";  // Hide the details section
+        }
+    </script>
+</body>
+</html>

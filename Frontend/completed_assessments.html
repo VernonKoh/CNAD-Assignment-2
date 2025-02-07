@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Completed Assessments</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        h1 {
+            color: #4CAF50;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            color: #333;
+            font-size: 2em;
+            margin-top: 0;
+        }
+
+        p {
+            font-size: 1.1em;
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .assessment {
+            padding: 15px;
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            background-color: #fafafa;
+            transition: background-color 0.3s ease;
+        }
+
+        .assessment:hover {
+            background-color: #f1f1f1;
+        }
+
+        .assessment p {
+            margin: 5px 0;
+        }
+
+
+
+        #toggle-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 25px;
+            font-size: 1.2em;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        #toggle-btn.active {
+            background-color: #f44336;  /* Change color when active */
+        }
+
+        #toggle-btn:hover {
+            background-color: #45a049;
+        }
+        #toggle-btn.active {
+            background-color: #f44336;  /* Change color when active */
+        }
+
+        #user-profile {
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        #user-profile p {
+            font-size: 1.1em;
+        }
+
+        #user-profile h2 {
+            font-size: 1.8em;
+            color: #333;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            h2 {
+                font-size: 1.5em;
+            }
+
+            #toggle-btn {
+                font-size: 1em;
+                padding: 10px 20px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="button-container">
+            <button id="toggle-btn">Show Low Risk</button>
+        </div>
+        <h1>Completed Assessments</h1>
+        
+        <div id="user-profile"></div> <!-- Profile info will be displayed here -->
+        
+        <div id="assessments-list"></div>
+    </div>
+
+    <script>
+        // Extract user ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('userid');
+
+        // Check if userId exists
+        if (!userId) {
+            document.getElementById("assessments-list").innerHTML = "<p>No user ID provided.</p>";
+        } else {
+            // Fetch user profile data
+            fetch(`/api/v1/users/user_profile/${userId}`)
+            .then(response => response.json())
+            .then(user => {
+                const profileContainer = document.getElementById("user-profile");
+
+                // Display user profile information
+                profileContainer.innerHTML = `
+                    <h2>Completed Assessments for ${user.name}</h2>
+                    <p><strong>Email:</strong> ${user.email}</p>
+                    <p><strong>Role:</strong> ${user.role}</p>
+                    <p><strong>Age:</strong> ${user.age}</p>
+                    <p><strong>Gender:</strong> ${user.gender}</p>
+                    <p><strong>Address:</strong> ${user.address}</p>
+                    <p><strong>Phone:</strong> ${user.phone_number}</p>
+                `;
+            })
+            .catch(error => {
+                console.error('Error fetching user profile:', error);
+                document.getElementById("user-profile").innerHTML = "<p>Error loading profile data. Please try again later.</p>";
+            });
+
+            // Fetch completed assessments
+            fetch(`/api/v1/users/completed_assessments/${userId}`)
+            .then(response => response.json())
+            .then(assessments => {
+                const container = document.getElementById("assessments-list");
+
+                if (!assessments || assessments.length === 0) {
+                    container.innerHTML = "<p>No completed assessments found.</p>";
+                    return;
+                }
+                
+                // Function to fetch assessment name by ID
+                function fetchAssessmentName(assessmentId) {
+                    return fetch(`/api/v1/users/assessments/${assessmentId}`)
+                        .then(response => response.json())
+                        .then(data => data.name)
+                        .catch(() => "Unknown Assessment");  // Handle errors
+                }
+
+                // Store references to assessment divs
+                const assessmentDivs = [];
+
+                // Process each assessment
+                assessments.forEach(async (assessment) => {
+                    const assessmentName = await fetchAssessmentName(assessment.assessment_id);
+                    
+                    // Determine if the total risk score is high or low and assign the appropriate emoji
+                    const riskEmoji = assessment.total_risk_score > 10 ? "🟥" : "🟩";  // Red for high risk, green for low risk
+
+                    const div = document.createElement("div");
+                    div.classList.add("assessment");
+                    div.dataset.risk = assessment.total_risk_score;  // Store total risk score for later filtering
+                    div.innerHTML = `
+                        <p><strong>Assessment:</strong> ${assessmentName} ${riskEmoji}</p>
+                        <p><strong>Total Risk Score:</strong> ${assessment.total_risk_score}</p>
+                        <p><strong>Completed At:</strong> ${assessment.completed_at}</p>
+                    `;
+                    container.appendChild(div);
+                    assessmentDivs.push(div);
+                });
+
+                // Toggle button logic
+                const toggleBtn = document.getElementById('toggle-btn');
+                toggleBtn.addEventListener('click', function() {
+                    const hideLowRisk = toggleBtn.classList.toggle('active'); // Toggle active state
+                    
+                    // Loop through assessments and hide/show based on the button state
+                    assessmentDivs.forEach(div => {
+                        const riskScore = parseInt(div.dataset.risk);
+                        if (hideLowRisk && riskScore <= 10) {
+                            div.style.display = 'none'; // Hide low-risk assessments
+                        } else {
+                            div.style.display = 'block'; // Show all assessments
+                        }
+                    });
+
+                    // Update button text
+                    toggleBtn.textContent = hideLowRisk ? "Show All" : "Show Low Risk";
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching completed assessments:', error);
+                document.getElementById("assessments-list").innerHTML = "<p>Error loading data. Please try again later.</p>";
+            });
+        }
+    </script>
+
+</body>
+</html>

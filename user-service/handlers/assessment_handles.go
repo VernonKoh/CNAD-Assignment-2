@@ -115,6 +115,23 @@ func GetAssessments(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(assessments)
 }
 
+// GetAssessmentByID returns a single assessment based on the ID in the URL path
+func GetAssessmentByID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r) // Get path parameters
+	id := vars["assessmentid"]
+
+	var a Assessment
+	err := database.DB.QueryRow("SELECT id, name FROM assessments WHERE id = ?", id).Scan(&a.ID, &a.Name)
+
+	if err != nil {
+		http.Error(w, "Assessment not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(a)
+}
+
 type Submission struct {
 	AssessmentID int   `json:"assessment_id"`
 	UserID       int   `json:"user_id"`
@@ -182,4 +199,6 @@ func UpdateHighRiskStatus(w http.ResponseWriter, r *http.Request) {
 	// Success response
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"message": "User high risk status updated successfully"})
+	log.Printf("User ID: %d high risk status updated successfully to %t", request.UserID, request.HighRisk)
+
 }
