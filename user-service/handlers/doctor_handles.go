@@ -190,7 +190,7 @@ func CreateAssessment(w http.ResponseWriter, r *http.Request) {
 	// Get the newly inserted assessment ID
 	assessmentID, _ := result.LastInsertId()
 
-	// Send response
+	// Send response with the new assessment ID
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"message":       "Assessment created successfully",
@@ -216,16 +216,26 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 
 	// Insert the new question into the database
 	query := `INSERT INTO questions (assessment_id, question_text, type) VALUES (?, ?, ?)`
-	_, err := database.DB.Exec(query, question.AssessmentID, question.QuestionText, question.Type)
+	result, err := database.DB.Exec(query, question.AssessmentID, question.QuestionText, question.Type)
 	if err != nil {
 		http.Error(w, "Failed to create question", http.StatusInternalServerError)
 		return
 	}
 
-	// Respond with a success message
+	// Retrieve the ID of the newly inserted question
+	questionID, err := result.LastInsertId()
+	if err != nil {
+		http.Error(w, "Failed to retrieve question ID", http.StatusInternalServerError)
+		return
+	}
+
+	// Respond with the success message and the question ID
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"message": "Question created successfully"})
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message":     "Question created successfully",
+		"question_id": questionID, // Return the question ID
+	})
 }
 
 type newOption struct {
