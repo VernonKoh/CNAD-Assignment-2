@@ -51,7 +51,7 @@
         }
 
         // Trigger search when there's input
-        fetch(`/api/v1/users/search?name=${query}`)
+        fetch(`http://localhost:8081/api/v1/users/search?name=${query}`)
             .then(response => response.json())
             .then(users => {
                 // Clear the current results
@@ -69,7 +69,9 @@
                 const checkButton = document.createElement("button");
                 checkButton.innerText = "Check Assessment";
                 checkButton.onclick = () => {
-                    window.location.href = `/completed_assessments.html?userid=${user.id}`;  // Redirect to completed assessments page
+                    window.location.href = `completed_assessments.html?userid=${user.id}`;
+
+                    // Redirect to completed assessments page
                 };
 
                 // Set the inner HTML of the user div
@@ -98,7 +100,7 @@
 
         function displayUserDetails(userId) {
             // Show the user details dynamically
-            fetch(`/api/v1/users/user_profile/${userId}`)
+            fetch(`http://localhost:8081/api/v1/users/user_profile/${userId}`)
                 .then(response => response.json())
                 .then(user => {
                     const detailsDiv = document.getElementById("user-details");
@@ -107,7 +109,6 @@
                         <p><strong>Name:</strong> ${user.name}</p>
                         <p><strong>Email:</strong> ${user.email}</p>
                         <p><strong>Role:</strong> ${user.role}</p>
-                        <p><strong>Verification Status:</strong> ${user.is_verified ? "Verified" : "Not Verified"}</p>
                         <p><strong>Facial ID:</strong> ${user.facial_id || "Not Provided"}</p>
                     `;
                     detailsDiv.style.display = "block";  // Show the details section
