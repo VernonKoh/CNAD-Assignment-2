@@ -46,6 +46,6 @@ func main() {
 	handler := enableCORS(r)
 
 	// Start the server
-	fmt.Println("Server is running on http://localhost:8081")
-	log.Fatal(http.ListenAndServe(":8081", handler))
+	fmt.Println("Server is running on http://localhost:8082")
+	log.Fatal(http.ListenAndServe(":8082", handler))
 }
