@@ -22,9 +22,12 @@ func main() {
 	// Register game routes
 	routes.RegisterGameRoutes(router)
 
-	// Add CORS support
+	// Serve the static files for the frontend
+	staticDir := "../frontend" // Path to the directory containing `index.html`
+	router.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir(staticDir))))
+
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:8081"},
+		AllowedOrigins:   []string{"http://localhost:8081", "http://localhost:8083"}, // Allow both 8081 and 8083
 		AllowedMethods:   []string{"GET", "POST"},
 		AllowedHeaders:   []string{"Authorization", "Content-Type"},
 		AllowCredentials: true,
