@@ -48,7 +48,7 @@
         <h1 class="welcome-message" id="doctorName">Hello, Doctor!</h1>
         <h4>Welcome to your dashboard</h4>
         <div class="dashboard-actions">
-            <button class="btn btn-primary btn-custom" onclick="viewAppointments()">View Appointments</button>
+            <button class="btn btn-primary btn-custom" onclick="manageAssessments()">Manage Assessments</button>
             <button class="btn btn-success btn-custom" onclick="managePatients()">Manage Patients</button>
             <button class="btn btn-danger btn-custom" onclick="logout()">Logout</button>
         </div>
@@ -67,9 +67,9 @@
             window.location.href = "doctor.html";
         }
 
-        function viewAppointments() {
-            alert("Redirecting to Appointments...");
-            window.location.href = "appointments.html";
+        function manageAssessments() {
+            alert("Redirecting to Manage Assessments...");
+            window.location.href = "manage_assessments.html";
         }
 
         function managePatients() {

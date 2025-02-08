@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assessments</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .container { width: 60%; margin: auto; text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid black; padding: 10px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        button { padding: 8px 12px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Assessments</h1>
+        <button onclick="location.href='create_assessment.html'">Create New Assessment</button>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="assessments-table">
+                <!-- Data will be populated here dynamically -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        async function fetchAssessments() {
+            const response = await fetch("http://localhost:8081/api/v1/users/assessments");
+            const assessments = await response.json();
+            const tableBody = document.getElementById("assessments-table");
+            tableBody.innerHTML = "";
+            
+            assessments.forEach(a => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${a.id}</td>
+                    <td>${a.name}</td>
+                    <td>${a.description || "No description"}</td>
+                    <td>
+                        <button onclick="editAssessment(${a.id})">Edit</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function editAssessment(id) {
+            window.location.href = `edit_assessment.html?id=${id}`;
+        }
+
+        fetchAssessments();
+    </script>
+</body>
+</html>
