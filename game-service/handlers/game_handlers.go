@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 
+	"time"
+
 	"github.com/gorilla/mux"
 )
 
@@ -18,8 +20,9 @@ type ScoreRequest struct {
 
 // ScoreResponse struct for returning scores
 type ScoreResponse struct {
-	Score     int `json:"score"`
-	TimeTaken int `json:"time_taken"`
+	Score     int       `json:"score"`
+	TimeTaken int       `json:"time_taken"`
+	Timestamp time.Time `json:"timestamp"` // New field to hold the timestamp
 }
 
 // ✅ Function to handle score submission
@@ -59,8 +62,8 @@ func GetUserScores(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := vars["id"]
 
-	// Query the database for the user's game scores
-	rows, err := database.DB.Query("SELECT score, time_taken FROM game_scores WHERE user_id = ? ORDER BY time_taken ASC", userID)
+	// Query the database for the user's game scores, including timestamp
+	rows, err := database.DB.Query("SELECT score, time_taken, timestamp FROM game_scores WHERE user_id = ? ORDER BY time_taken ASC", userID)
 	if err != nil {
 		log.Println("❌ Error fetching scores:", err)
 		http.Error(w, `{"error": "Failed to retrieve scores"}`, http.StatusInternalServerError)
@@ -72,7 +75,7 @@ func GetUserScores(w http.ResponseWriter, r *http.Request) {
 	var scores []ScoreResponse
 	for rows.Next() {
 		var score ScoreResponse
-		if err := rows.Scan(&score.Score, &score.TimeTaken); err != nil {
+		if err := rows.Scan(&score.Score, &score.TimeTaken, &score.Timestamp); err != nil {
 			log.Println("❌ Error scanning score row:", err)
 			http.Error(w, `{"error": "Failed to parse scores"}`, http.StatusInternalServerError)
 			return

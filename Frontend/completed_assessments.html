@@ -146,7 +146,7 @@
             document.getElementById("assessments-list").innerHTML = "<p>No user ID provided.</p>";
         } else {
             // Fetch user profile data
-            fetch(`/api/v1/users/user_profile/${userId}`)
+            fetch(`http://localhost:8081/api/v1/users/user_profile/${userId}`)
             .then(response => response.json())
             .then(user => {
                 const profileContainer = document.getElementById("user-profile");
@@ -168,7 +168,7 @@
             });
 
             // Fetch completed assessments
-            fetch(`/api/v1/users/completed_assessments/${userId}`)
+            fetch(`http://localhost:8081/api/v1/users/completed_assessments/${userId}`)
             .then(response => response.json())
             .then(assessments => {
                 const container = document.getElementById("assessments-list");
@@ -180,7 +180,7 @@
                 
                 // Function to fetch assessment name by ID
                 function fetchAssessmentName(assessmentId) {
-                    return fetch(`/api/v1/users/assessments/${assessmentId}`)
+                    return fetch(`http://localhost:8081/api/v1/users/assessments/${assessmentId}`)
                         .then(response => response.json())
                         .then(data => data.name)
                         .catch(() => "Unknown Assessment");  // Handle errors

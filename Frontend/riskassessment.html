@@ -134,8 +134,9 @@
 
                 if (response.ok) {
                     let riskMessage = totalRiskScore > 10 
-                    ? "Risk Score: High" 
+                    ? "Risk Score: High, Please visit a doctor" 
                     : "Risk Score: Low";
+                    alert('Please visit a doctor');
                     document.getElementById("result").innerText = `Assessment Submitted! Risk Score: ${totalRiskScore} (${riskMessage})`;
                     document.getElementById("submit-btn").style.display = "none";
                     document.getElementById("home-btn").style.display = "block";

@@ -12,3 +12,5 @@ func RegisterGameRoutes(router *mux.Router) {
 	router.HandleFunc("/game/submit", handlers.SubmitScore).Methods("POST")
 	router.HandleFunc("/game/scores/{id}", handlers.GetUserScores).Methods("GET") // Fetch scores
 }
+
+//http://localhost:8083/game/scores/4
