@@ -84,6 +84,12 @@
         #processedImageHeader, #postureAnalysisHeader, #liveWebcamHeader {
             display: none;
         }
+        /* Redirect Button */
+        #redirectButton {
+            display: none; /* Hidden by default */
+            background-color: #dc3545; /* Red for urgency */
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -109,6 +115,9 @@
     <!-- Posture Analysis Section -->
     <h2 id="postureAnalysisHeader">Posture Analysis:</h2>
     <div id="analysisResults"></div>
+
+    <!-- Redirect Button -->
+    <button id="redirectButton">Find Nearby Clinics</button>
 
     <!-- Processed Image Section -->
     <h2 id="processedImageHeader">Processed Image:</h2>
@@ -171,6 +180,9 @@
                 noIssuesMessage.textContent = "No severe issues with posture detected.";
                 noIssuesMessage.classList.add('analysis-item', 'success');
                 analysisResultsDiv.appendChild(noIssuesMessage);
+
+                // Hide the redirect button if no issues
+                document.getElementById('redirectButton').style.display = "none";
             } else {
                 // Parse and display each analysis result
                 for (const [key, value] of Object.entries(analysis)) {
@@ -189,8 +201,16 @@
                     itemDiv.textContent = `${formattedKey}: ${value}`;
                     analysisResultsDiv.appendChild(itemDiv);
                 }
+
+                // Show the redirect button if issues are detected
+                document.getElementById('redirectButton').style.display = "block";
             }
         }
+
+        // Redirect to clinics.html when the button is clicked
+        document.getElementById('redirectButton').addEventListener('click', () => {
+            window.location.href = "clinics.html";
+        });
 
         // Toggle between Image Upload and Webcam Mode
         document.getElementById('uploadMode').addEventListener('click', () => {
