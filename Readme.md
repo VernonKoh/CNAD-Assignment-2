@@ -89,7 +89,7 @@ Below is the architecture diagram illustrating the microservices and their inter
 |  Database (Users)    |                          |  Database (Analysis)  |
 +---------------------+                          +----------------------+
 
-
+```
 ### Key Takeaways:
 - **Independent Microservices**: Each service runs independently with its own database.
 - **Fault Isolation**: If one service fails, others continue operating without disruption.
