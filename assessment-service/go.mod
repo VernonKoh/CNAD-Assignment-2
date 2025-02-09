@@ -3,7 +3,6 @@ module CNAD_Assignment_2/assessment-service
 go 1.23
 
 require (
-	github.com/go-resty/resty/v2 v2.16.5
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/golang-jwt/jwt/v4 v4.5.1
 	github.com/gorilla/mux v1.8.1
@@ -15,7 +14,5 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
-	github.com/felixge/httpsnoop v1.0.4 // indirect
-	golang.org/x/net v0.33.0 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 )
