@@ -1,0 +1,61 @@
+# Use debian:bullseye image for both build and runtime
+FROM debian:bullseye AS builder
+
+# Install Go in the builder stage
+RUN apt-get update && apt-get install -y golang git netcat
+
+# Install wget and Go (latest version)
+RUN apt-get update && apt-get install -y wget && \
+    wget https://dl.google.com/go/go1.23.4.linux-amd64.tar.gz -P /tmp && \
+    tar -C /usr/local -xzf /tmp/go1.23.4.linux-amd64.tar.gz && \
+    rm /tmp/go1.23.4.linux-amd64.tar.gz
+
+
+# Install dockerize to wait for dependencies like MySQL
+RUN wget https://github.com/jwilder/dockerize/releases/download/v0.6.1/dockerize-linux-amd64-v0.6.1.tar.gz -P /tmp && \
+    tar -C /usr/local/bin -xzf /tmp/dockerize-linux-amd64-v0.6.1.tar.gz && \
+    rm /tmp/dockerize-linux-amd64-v0.6.1.tar.gz
+
+# Add Go binary to PATH
+ENV PATH="/usr/local/go/bin:${PATH}"
+
+# Set the Current Working Directory inside the container
+WORKDIR /app
+
+# Copy the Go Modules file (from the specific service folder)
+COPY ./user-service/go.mod ./user-service/go.sum ./user-service/
+
+# Set the working directory for the service
+WORKDIR /app/user-service
+
+# Download dependencies
+RUN go mod tidy
+
+# Copy the rest of the application code
+COPY ./user-service/ .
+
+# Build the Go binary
+RUN go build -o main .
+
+# Debugging step (optional)
+RUN ls -l /app/user-service
+RUN cat /app/user-service/go.mod
+RUN cat /app/user-service/go.sum
+
+# Start a new stage from debian:bullseye for the runtime environment
+FROM debian:bullseye
+
+# Install necessary packages for running Go applications
+RUN apt-get update && apt-get install -y libgcc1 netcat
+
+# Set the Current Working Directory inside the container
+WORKDIR /app
+
+# Copy the pre-built binary from the previous stage
+COPY --from=builder /app/user-service/main .
+
+# Expose the port the app will run on
+EXPOSE 8081
+
+# Command to run the executable
+CMD ["./main"]

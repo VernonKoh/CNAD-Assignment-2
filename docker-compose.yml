@@ -1,0 +1,48 @@
+services:
+  user-service:
+    build:
+      context: .
+      dockerfile: ./user-service/User_Dockerfile
+    ports:
+      - "8081:8081"
+    networks:
+      - app-network
+    command: /bin/bash -c "until nc -z database 3306; do echo 'Waiting for MySQL...'; sleep 2; done && ./user-service"
+
+  game-service:
+    build:
+      context: .
+      dockerfile: ./game-service/Game_Dockerfile
+    ports:
+      - "8083:8083"
+    networks:
+      - app-network
+    command: /bin/bash -c "until nc -z database 3306; do echo 'Waiting for MySQL...'; sleep 2; done && ./game-service"
+
+  assessment-service:
+    build:
+      context: .
+      dockerfile: ./assessment-service/Assessment_Dockerfile
+    ports:
+      - "8082:8082"
+    networks:
+      - app-network
+    command: /bin/bash -c "until nc -z database 3306; do echo 'Waiting for MySQL...'; sleep 2; done && ./assessment-service"
+
+  database:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: elderly
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    ports:
+      - "3307:3306"
+    networks:
+      - app-network
+    volumes:
+      - ./SQL\ database.sql:/docker-entrypoint-initdb.d/database.sql # Mount the SQL file to initialize the database
+
+networks:
+  app-network:

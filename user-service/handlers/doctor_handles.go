@@ -278,3 +278,36 @@ func CreateOption(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(newOption)
 }
+
+// DeleteAssessmentHandler deletes an assessment by ID
+func DeleteAssessment(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	assessmentID := vars["id"]
+
+	// Prepare DELETE query
+	query := "DELETE FROM Assessments WHERE id = ?"
+
+	// Execute DELETE query
+	result, err := database.DB.Exec(query, assessmentID)
+	if err != nil {
+		http.Error(w, "Failed to delete assessment", http.StatusInternalServerError)
+		log.Println("Error deleting assessment:", err)
+		return
+	}
+
+	// Check if any row was affected
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		http.Error(w, "Assessment not found", http.StatusNotFound)
+		return
+	}
+
+	// Success response
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message":      "Assessment deleted successfully",
+		"assessmentID": assessmentID, // Return the question ID
+	})
+	log.Println("Assessment with ID ", assessmentID, "deleted successfully")
+}
