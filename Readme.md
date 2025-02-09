@@ -91,7 +91,7 @@ Below is the architecture diagram illustrating the microservices and their inter
 |  Database (Users)    |                          |  Database (Analysis)  |
 +---------------------+                          +----------------------+
 
-```plaintext
+```
 
 # Fall Risk Self-Assessment Microservices Architecture
 
