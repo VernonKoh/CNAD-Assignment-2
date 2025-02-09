@@ -130,17 +130,17 @@ Step 2: Access the Application
 Website: http://localhost:8081
 API Endpoint: http://localhost:8081/api
 
-Why Microservices Architecture?
-Scalability: Individual services can be scaled based on demand. For example, Video Analysis Service can scale separately to handle increased processing loads.
+**Why Microservices Architecture?**
 
-Fault Isolation: If one service goes down, the others continue running. This ensures higher reliability and uptime.
+1. Scalability: Individual services can be scaled based on demand. For example, Video Analysis Service can scale separately to handle increased processing loads.
 
-Independent Databases: Each service manages its own database, improving data security and reducing dependencies.
+2. Fault Isolation: If one service goes down, the others continue running. This ensures higher reliability and uptime.
 
-Flexibility and Maintainability:
+3. Independent Databases: Each service manages its own database, improving data security and reducing dependencies.
 
-Independent Development: Teams can work on different services simultaneously.
-Faster Deployments: Updates to one service do not require changes to others.
+4. Flexibility and Maintainability:
+    - Independent Development: Teams can work on different services simultaneously.
+    - Faster Deployments: Updates to one service do not require changes to others.
 
 ### Conclusion
 This microservices-based Fall Risk Self-Assessment System ensures a scalable, resilient, and modular solution. By leveraging RESTful APIs, independent databases, and containerized deployments, this architecture enhances flexibility, maintainability, and long-term system performance.
