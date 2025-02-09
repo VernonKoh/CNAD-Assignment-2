@@ -86,9 +86,26 @@
         }
         /* Redirect Button */
         #redirectButton {
-            display: none; /* Hidden by default */
             background-color: #dc3545; /* Red for urgency */
             margin-top: 20px;
+        }
+
+        .spinner {
+            border: 5px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #0d6efd; /* Blue */
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
         }
     </style>
 </head>
@@ -96,30 +113,33 @@
     <!-- Navbar Container -->
     <div id="navbar-container"></div>
     <h1>Gait Analysis</h1>
-    <!-- Buttons to switch between Image Upload and Webcam -->
+
     <button id="webcamMode">Allow Webcam access</button>
+    <!-- Video Upload Form -->
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" name="file" id="file" accept="video/*" style="display: none;" required>
+        <button type="button" id="uploadFileBtn" style="background-color: #ffc107;">Upload Video</button>
+        <button type="submit" style="margin-top: 10px;">Submit</button>
+    </form>
 
     <!-- Redirect Button -->
-    <button id="redirectButton">Find Nearby Clinics</button>
+    <div id="clinicsSection" style="display: none; margin-top: 20px;">
+        <h4>Worried about your Gait? Find Nearby Clinics for proper analysis</h4>
+        <button id="redirectButton">Find Nearby Clinics</button>
+    </div>
+
+    <div id="loadingIndicator" style="display: none;">
+        <p>Uploading and processing video... Please wait.</p>
+        <div class="spinner"></div> <!-- You'll need to define CSS for .spinner -->
+      </div>
 
     <!-- Live Webcam Section -->
     <h2 id="liveWebcamHeader">Live Webcam:</h2>
     <img id="webcamFeed" src="" style="max-width: 100%; border: 2px solid black; display: none;" />
+    
+    <iframe id="fontWidget" src="font_widget.html" style="position: fixed; bottom: 20px; right: 20px; border: none;"></iframe>
 
     <script>
-        let videoStream;
-
-        // Redirect to clinics.html when the button is clicked
-        document.getElementById('redirectButton').addEventListener('click', () => {
-            window.location.href = "clinics.html";
-        });
-
-        document.getElementById('webcamMode').addEventListener('click', () => {
-            document.getElementById('webcamFeed').src = "http://127.0.0.1:5000/webcam";
-            document.getElementById('webcamFeed').style.display = "block";
-            document.getElementById('liveWebcamHeader').style.display = "block"; // Show header
-        });
-
         // Dynamically load the navbar
         async function loadNavbar() {
             try {
@@ -136,6 +156,137 @@
         }
         loadNavbar();  // Load navbar dynamically
 
+        // Handle file upload
+        document.getElementById('uploadFileBtn').addEventListener('click', () => {
+            document.getElementById('file').click();
+        });
+
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            const fileInput = document.getElementById('file');
+
+            if (!fileInput.files[0]) {
+                alert("Please select a file.");
+                return;
+            }
+            formData.append('file', fileInput.files[0]);
+
+            // Show loading indicator
+            document.getElementById('loadingIndicator').style.display = "block";
+
+            try {
+                const response = await fetch('http://localhost:8082/api/v1/assessment/upload_video', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data && data.download_url) {
+                    //alert("Video Processing Complete! Click OK to download.");
+                    //window.location.href = data.download_url; // Redirect to download the processed video
+
+                    // Hide loading indicator
+                    document.getElementById('loadingIndicator').style.display = "none";
+
+                    // Display processed video on the frontend
+                    const videoPlayer = document.createElement('video');
+                    videoPlayer.src = data.download_url;
+                    videoPlayer.controls = true; // Add controls like play, pause, etc.
+                    videoPlayer.width = 640; // Set desired width
+                    videoPlayer.height = 480; // Set desired height
+                    document.body.appendChild(videoPlayer);
+
+            // Make Clinic Button Available
+            document.getElementById('clinicsSection').style.display = "block";
+
+        } else {
+            alert("Error: Invalid response from server. Please try again later.");
+        }
+    } catch (error) {
+        console.error('Error uploading video:', error);
+        alert("Failed to upload video. Please try again later.");
+    } finally {
+        // Hide loading indicator (ensure it's hidden even if an error occurs)
+        document.getElementById('loadingIndicator').style.display = "none";
+    }
+});
+
+document.getElementById('redirectButton').addEventListener('click', () => {
+            // Redirect to the clinics page
+            window.location.href = "clinics.html";
+        });
+        // Handle webcam access
+        document.getElementById('webcamMode').addEventListener('click', () => {
+            document.getElementById('webcamFeed').src = "http://127.0.0.1:5000/webcam";
+            document.getElementById('webcamFeed').style.display = "block";
+            document.getElementById('liveWebcamHeader').style.display = "block"; // Show header
+        });
+
+        // Store the initial font sizes of all elements
+        const initialFontSizes = {};
+
+        // Function to store initial font sizes
+        function storeInitialFontSizes() {
+            document.querySelectorAll('h1, h2, h3, p, span, body').forEach(element => {
+                initialFontSizes[element] = window.getComputedStyle(element).fontSize;
+            });
+        }
+
+        // Function to apply the scale factor
+        function applyScaleFactor(scaleFactor) {
+            document.querySelectorAll('h1, h2, h3, p, span, body').forEach(element => {
+                if (initialFontSizes[element]) {
+                    const initialSize = parseFloat(initialFontSizes[element]);
+                    const newSize = initialSize * scaleFactor;
+                    element.style.fontSize = `${newSize}px`;
+                }
+            });
+        }
+
+
+        // Call this function on page load
+        window.addEventListener('load', () => {
+            storeInitialFontSizes(); // Store the initial sizes
+
+            // Retrieve the scale factor from local storage
+            const storedScaleFactor = localStorage.getItem('scaleFactor');
+
+            if (storedScaleFactor) {
+                const scaleFactor = parseFloat(storedScaleFactor);
+                if (!isNaN(scaleFactor)) {
+                    applyScaleFactor(scaleFactor); // Apply the stored scale factor
+                } else {
+                    console.error('Invalid scale factor in local storage:', storedScaleFactor);
+                }
+            }
+        });
+
+        // Listen for messages from the iframe
+        window.addEventListener('message', (event) => {
+            // Log the received message for debugging
+            console.log('Message received from iframe:', event.data);
+
+            // Ensure the message is coming from the expected origin
+            if (event.origin !== window.location.origin) {
+                console.error('Invalid origin:', event.origin);
+                return;
+            }
+
+            const scaleFactor = parseFloat(event.data);
+
+            // Apply the scale factor to the parent document
+            if (!isNaN(scaleFactor)) {
+                applyScaleFactor(scaleFactor);
+            } else {
+                console.error('Invalid scale factor:', event.data);
+            }
+        });
     </script>
     <!-- Bootstrap JavaScript Bundle (for Navbar and Components) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>

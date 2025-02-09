@@ -15,6 +15,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.1.0/css/bootstrap.min.css">
     <title>Welcome</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap">
+
     <style>
 
 
@@ -706,6 +708,186 @@
         box-shadow: none; /* Remove focus outline if you don't like it */
     }
 
+
+/* DeepSeek-style Background */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
+    /* ✅ Restore Clean Background */
+    body {
+        background-color: #f5f5f5;
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* ✅ Chatbox with DeepSeek Style */
+    .chat-container {
+        max-width: 550px;
+        margin: 50px auto;
+        padding: 15px;
+        border-radius: 15px;
+        background-color: white;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        transition: transform 0.2s ease-in-out;
+    }
+
+    /* ✅ Chatbox Styling */
+    #chatbox {
+        display: flex;
+        flex-direction: column;
+        height: 450px;
+        overflow-y: auto;
+        border: none;
+        padding: 10px;
+        background: white;
+        border-radius: 10px;
+    }
+
+    /* ✅ Smooth Animations for Chat Bubbles */
+    .message {
+        max-width: 80%;
+        padding: 12px;
+        border-radius: 12px;
+        margin-bottom: 8px;
+        font-size: 16px;
+        line-height: 1.7;
+        font-weight: 400;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    /* ✅ Fade-in Animation */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ✅ User Message */
+    .user {
+        background: #007bff;
+        color: white;
+        align-self: flex-end;
+        border-radius: 12px 12px 0 12px;
+    }
+
+    /* ✅ DeepSeek Bot Message */
+    .bot {
+        background: #f7f7f8;
+        color: black;
+        align-self: flex-start;
+        border-radius: 12px 12px 12px 0;
+        font-weight: 500;
+    }
+
+    /* ✅ Input Box */
+    .input-container {
+        display: flex;
+        padding: 10px;
+        background: white;
+        border-top: 1px solid #ddd;
+        border-radius: 0 0 10px 10px;
+    }
+
+    #userInput {
+        flex-grow: 1;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        outline: none;
+        font-size: 16px;
+        font-family: 'Inter', sans-serif;
+    }
+
+    #sendBtn {
+        padding: 10px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        margin-left: 5px;
+        transition: background 0.2s ease-in-out;
+    }
+
+    #sendBtn:hover {
+        background-color: #0056b3;
+    }
+
+
+/* ✅ Chat Popup Box */
+.chat-container {
+    display: none; /* Hidden by default */
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 400px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+/* ✅ Chat Header */
+.chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    background: #8B0000; /* Dark Red */
+    color: white;
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+}
+
+/* ✅ Chat Body */
+.chat-body {
+    height: 300px;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+/* ✅ Chat Input */
+.chat-input {
+    display: flex;
+    padding: 10px;
+    border-top: 1px solid #ddd;
+}
+
+/* ✅ Send Button */
+.send-btn {
+    background: black;
+    border: none;
+    color: white;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+/* ✅ Button beside "Set Up Facial Recognition" */
+.custom-red-btn {
+    background-color: #8B0000; /* Dark Red */
+    color: white;
+    border-radius: 8px;
+    padding: 10px 15px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.custom-red-btn:hover {
+    background-color: #660000;
+}
+
+
     </style>
 </head>
 <body>
@@ -723,10 +905,440 @@
         <!-- Buttons Container -->
         <div class="btn-container">
             <button class="btn custom-blue-btn" onclick="setupFacialRecognition()">Set Up Facial Recognition</button>
-
+            <button class="btn custom-red-btn" onclick="openChat()">Chat with LionBee</button>
         </div>
     </div>
 </section>
+
+
+<!-- ✅ Chat Popup -->
+<div id="chatPopup" class="chat-container">
+    <div class="chat-header">
+        <div class="chat-header-content">
+            <img src="assets/lionbee.png" alt="LionBee" class="chat-logo">
+            <div>
+                <h2 class="chat-title">Hi, I'm LionBee.</h2>
+                <p class="chat-subtitle">How can I help you today?</p>
+            </div>
+        </div>
+        <button class="close-btn" onclick="closeChat()">✖</button>
+    </div>
+
+    <div class="chat-body">
+        <div id="chatMessages"></div>
+    </div>
+
+    <div class="chat-input">
+        <input type="text" id="userMessage" placeholder="Type a message..." onkeypress="handleKeyPress(event)">
+        <button class="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+</div>
+
+
+
+
+<style>
+    /* ✅ DeepSeek Header Styling */
+    .chat-header {
+    text-align: center;
+    padding: 20px;
+}
+
+.chat-logo {
+    width: 150px; /* ✅ Bigger logo */
+    height: auto;
+    margin-bottom: 10px;
+}
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600&family=Inter:wght@400;500;600&display=swap');
+
+/* ✅ Set OpenAI-Style Font */
+body {
+    font-family: 'Manrope', sans-serif;
+    background-color: #f7f7f8;
+}
+/* ✅ OpenAI Font for Chat Header */
+.chat-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 22px;
+    font-weight: 600; /* Bold */
+}
+
+.chat-subtitle {
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    font-weight: 400; /* Normal */
+    color: #555;
+}
+
+
+/* ✅ Ensure Chatbox is Visible & Sized Correctly */
+.chat-container {
+    display: none; /* Hide by default */
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 450px; /* ✅ Increase width */
+    height: 550px; /* ✅ Increase height */
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    border: 2px solid #8B0000; /* Dark Red */
+    z-index: 1000;
+}
+
+/* ✅ Chat Header - Ensures Proper Spacing */
+.chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    background: #8B0000; /* Dark Red */
+    color: white;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 25px;
+}
+
+/* ✅ Fix Chat Header Content */
+.chat-header-content {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* ✅ Prevents overlap */
+}
+
+/* ✅ Chat Logo */
+.chat-logo {
+    width: 50px;
+    height: auto;
+}
+
+/* ✅ Ensure Chat Subtitle is White */
+.chat-subtitle {
+    font-size: 12px;
+    margin: 0;
+    color: white; /* ✅ FIXED */
+}
+
+/* ✅ Chat Body - Adjust for Bigger Size */
+.chat-body {
+    height: 400px;
+    overflow-y: auto;
+    padding: 10px;
+    background: #F8F8F8; /* Light grey */
+}
+
+/* ✅ Chat Input - Improve Look */
+.chat-input {
+    display: flex;
+    padding: 10px;
+    background: white;
+    border-top: 1px solid #ddd;
+}
+
+/* ✅ Input Field */
+.chat-input input {
+    flex-grow: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 20px;
+    background: #F1F1F1;
+    font-size: 14px;
+}
+
+/* ✅ Fix User Messages on the Right */
+.user-message {
+    background: #E5E5EA;
+    color: black;
+    padding: 10px;
+    border-radius: 15px;
+    margin: 8px;
+    max-width: 80%;
+    align-self: flex-end;
+    text-align: right;
+    display: inline-block;
+    font-family: 'Inter', sans-serif;
+}
+
+/* ✅ Fix Bot Messages on the Left */
+.bot-message {
+    background: #FFF3F3;
+    color: black;
+    padding: 10px;
+    border-radius: 15px;
+    margin: 8px;
+    max-width: 80%;
+    align-self: flex-start;
+    text-align: left;
+    display: inline-block;
+    font-family: 'Inter', sans-serif;
+}
+
+/* ✅ Fix Close Button */
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 16px;
+    color: rgb(0, 0, 0);
+    cursor: pointer;
+}
+
+/* ✅ Send Button - Make Round */
+.send-btn {
+    background: #8B0000;
+    border: none;
+    color: white;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+
+
+
+/* ✅ Button beside "Set Up Facial Recognition" */
+.custom-red-btn {
+    background-color: #8B0000; /* Dark Red */
+    color: white;
+    border-radius: 8px;
+    padding: 10px 15px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.custom-red-btn:hover {
+    background-color: #660000;
+}
+
+
+/* ✅ Chat Messages */
+#chatbox {
+    display: flex;
+    flex-direction: column;
+    height: 500px;
+    overflow-y: auto;
+    padding: 15px;
+}
+
+/* ✅ Chat Bubbles */
+.message {
+    max-width: 75%;
+    padding: 12px;
+    border-radius: 15px;
+    font-size: 16px;
+    line-height: 1.6;
+    word-wrap: break-word;
+    margin: 8px 0;
+}
+
+/* ✅ User Messages (Right Side) */
+.user {
+    background: #007bff;
+    color: white;
+    align-self: flex-end;
+    border-radius: 15px 15px 0 15px;
+}
+
+/* ✅ Chatbot Messages (Left Side) */
+.bot {
+    background: white;
+    color: black;
+    align-self: flex-start;
+    border-radius: 15px 15px 15px 0;
+    border: 1px solid #ddd;
+}
+
+/* ✅ OpenAI-Style Input Container */
+.input-container {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-radius: 12px;
+    background: white;
+    border: 1px solid #ddd;
+    margin-top: 10px;
+}
+
+/* ✅ Input Field */
+#userInput {
+    flex-grow: 1;
+    padding: 12px;
+    border: none;
+    font-size: 16px;
+    outline: none;
+    background: transparent;
+}
+
+/* ✅ Updated Send Button */
+.send-btn {
+    width: 45px;
+    height: 45px;
+    background: #8B0000; /* Dark Red (Matches LionBee Mascot) */
+    color: white;
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    font-size: 18px;
+}
+
+/* ✅ Hover Effect */
+.send-btn:hover {
+    background: #660000; /* Slightly darker red on hover */
+}
+
+/* ✅ Send Button Icon */
+.send-btn i {
+    font-size: 16px;
+}
+
+/* ✅ Input Box */
+.input-container {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border-radius: 12px;
+    background: white;
+    border: 1px solid #ddd;
+    margin-top: 10px;
+}
+
+/* ✅ Input Field */
+#userInput {
+    flex-grow: 1;
+    padding: 12px;
+    border: none;
+    font-size: 16px;
+    outline: none;
+    background: transparent;
+}
+
+/* ✅ OpenAI-Style Small Buttons */
+.icon-btn {
+    background: #f3f3f3;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-right: 5px;
+}
+
+.icon-btn i {
+    font-size: 14px;
+}
+
+
+</style>
+
+<!-- ✅ OpenAI-Style Chat UI -->
+<section class="chat-container">
+    <div id="chatbox">
+        <div id="messages"></div>
+    </div>
+    
+    <!-- Input Box Like OpenAI -->
+    <div class="input-container">
+        <input type="text" id="userInput" placeholder="Type a message..." />
+        <button id="sendBtn" class="send-btn"><i class="fas fa-arrow-up"></i></button>
+    </div>
+</section>
+
+
+<!-- ✅ DeepSeek Styling Fix -->
+<style>
+    /* Restore Chatbox */
+    .chat-container {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 15px;
+        border-radius: 15px;
+        background-color: white;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+
+    /* Chatbox */
+    #chatbox {
+        display: flex;
+        flex-direction: column;
+        height: 450px;
+        overflow-y: auto;
+        border-radius: 10px;
+        padding: 10px;
+        background: white;
+        border: 1px solid #ddd;
+    }
+
+    /* ✅ DeepSeek Chat Bubble Fix */
+    .message {
+        max-width: 80%;
+        padding: 12px;
+        border-radius: 12px;
+        margin-bottom: 8px;
+        font-size: 16px;
+        line-height: 1.7;
+        font-weight: 400;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    .user {
+        background: #007bff;
+        color: white;
+        align-self: flex-end;
+        border-radius: 12px 12px 0 12px;
+    }
+
+    .bot {
+        background: #f7f7f8;
+        color: black;
+        align-self: flex-start;
+        border-radius: 12px 12px 12px 0;
+    }
+
+    /* ✅ Input Box & Button */
+    .input-container {
+        display: flex;
+        padding: 10px;
+        border-top: 1px solid #ddd;
+    }
+
+    #userInput {
+        flex-grow: 1;
+        padding: 10px;
+        border-radius: 10px;
+        outline: none;
+        font-size: 16px;
+    }
+
+    #sendBtn {
+        padding: 10px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        margin-left: 5px;
+    }
+</style>
+
+
+
+
 <!-- Scripts -->
 <script src="https://cdn.faceio.net/fio.js"></script>
 <script>
@@ -758,6 +1370,8 @@ if (userName !== "unknown-user" && jwtToken) {
 
 
 
+
+
 // Dynamically load the navbar
 async function loadNavbar() {
             try {
@@ -769,7 +1383,7 @@ async function loadNavbar() {
             }
         }
 
-        const faceio = new faceIO("fioa11d5"); // Replace with your FaceIO public ID
+        const faceio = new faceIO("fioab895"); // Replace with your FaceIO public ID
 
         async function updateFacialId(userID, facialId) {
     try {
@@ -945,7 +1559,7 @@ async function setupFacialRecognition(event) {
             <div class="box">
                 <h3>Contact Info</h3>
                 <a href="#">+65 91234567</a>
-                <a href="#">Uler@gmail.com</a>
+                <a href="#">LionBefrienders@gmail.com</a>
                 <a href="#">Singapore</a>
                 <img src="images/payment.png" alt="">
             </div>
@@ -964,7 +1578,7 @@ async function setupFacialRecognition(event) {
             </div>
         </div>
         <div class="outer-footer">
-            Copyright &copy; Uler PTE LTD
+            Copyright &copy; LionBefrienders PTE LTD
         </div>
     </footer>
     <!-- Footer section ends -->
@@ -1056,6 +1670,130 @@ if (userName !== "unknown-user" && jwtToken) {
         fetchUserMembershipBenefits();  // Call the function to fetch membership benefits
     </script>
     <script src="https://smtpjs.com/v3/smtp.js"></script>
+    
+    <script>
+        document.getElementById('sendBtn').addEventListener('click', sendMessage);
+        document.getElementById('userInput').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    
+        function formatMarkdown(text) {
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')  // **bold**
+                .replace(/\*(.*?)\*/g, '<i>$1</i>')  // *italic*
+                .replace(/\n/g, '<br>');  // New lines
+        }
+    
+        async function sendMessage() {
+            const userInput = document.getElementById('userInput').value.trim();
+            if (!userInput) return;
+    
+            const messagesDiv = document.getElementById('messages');
+    
+            // ✅ Smooth User Message
+            messagesDiv.innerHTML += `<div class="message user"><strong>You:</strong> ${userInput}</div>`;
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            document.getElementById('userInput').value = '';
+    
+            try {
+                const response = await fetch('http://localhost:8084/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: userInput })
+                });
+    
+                const data = await response.json();
+                let botResponse = "Sorry, I didn't understand that.";
+                if (data.choices && data.choices.length > 0) {
+                    botResponse = formatMarkdown(data.choices[0].message.content);
+                }
+    
+                // ✅ Smooth Bot Message
+                messagesDiv.innerHTML += `<div class="message bot"><strong>LionBefrienders AI:</strong> ${botResponse}</div>`;
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            } catch (error) {
+                console.error('Error:', error);
+                messagesDiv.innerHTML += `<div class="message bot"><strong>LionBefrienders AI:</strong> Error fetching response.</div>`;
+            }
+        }
+
+
+
+
+// ✅ Show Chat Popup
+function openChat() {
+    const chatPopup = document.getElementById("chatPopup");
+    chatPopup.style.display = "block";
+    chatPopup.style.opacity = 0;
+    setTimeout(() => {
+        chatPopup.style.opacity = 1;
+    }, 100);
+}
+
+// ✅ Hide Chat Popup
+function closeChat() {
+    const chatPopup = document.getElementById("chatPopup");
+    chatPopup.style.opacity = 0;
+    setTimeout(() => {
+        chatPopup.style.display = "none";
+    }, 200);
+}
+
+// ✅ Handle Enter Key (Fix for "Press Enter Doesn't Work")
+function handleKeyPress(event) {
+    if (event.key === "Enter") {
+        sendMessage();
+    }
+}
+
+// ✅ Send a Message
+function sendMessage() {
+    const userMessage = document.getElementById("userMessage").value.trim();
+    if (userMessage === "") return;
+
+    let chatBody = document.querySelector(".chat-body");
+
+    // ✅ Append User Message (Right-Aligned)
+    let userBubble = `<div class="user-message">${userMessage}</div>`;
+    chatBody.innerHTML += userBubble;
+
+    // ✅ Auto Scroll
+    chatBody.scrollTop = chatBody.scrollHeight;
+
+    // ✅ Clear Input
+    document.getElementById("userMessage").value = "";
+
+    // ✅ Send message to backend
+    fetch("http://localhost:8084/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userMessage }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        let botMessage = data.choices[0].message.content || "Sorry, I couldn't understand that.";
+        let botBubble = `<div class="bot-message">${botMessage}</div>`;
+        chatBody.innerHTML += botBubble;
+
+        // ✅ Auto Scroll
+        chatBody.scrollTop = chatBody.scrollHeight;
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        let botBubble = `<div class="bot-message">Oops! Something went wrong.</div>`;
+        chatBody.innerHTML += botBubble;
+    });
+}
+
+
+    </script>
+    
+    
+    
+    
+    
     
 </body>
 </html>
