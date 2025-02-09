@@ -19,7 +19,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
        <!-- ✅ Showdown.js for Markdown Conversion -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
-    <iframe id="fontWidget" src="font_widget.html" style="position: fixed; bottom: 20px; right: 20px; border: none;"></iframe>
     <style>
 
 
@@ -1827,7 +1826,9 @@ if (userName !== "unknown-user" && jwtToken) {
             try {
                 const response = await fetch('http://localhost:8084/chat', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json' ,
+                                "Authorization": "Bearer YOUR-API-KEY" // 🔥 ADD THIS FOR DEBUGGING
+                    },
                     body: JSON.stringify({ message: userInput })
                 });
     
@@ -1950,7 +1951,7 @@ function toggleExpand() {
 
 
 
-// ✅ Voice Recognition Function (Supports English & Chinese)
+// ✅ Voice Recognition Function (Supports English, Chinese, Malay and Tamil)
 function startVoiceRecognition() {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
         alert("Your browser doesn't support speech recognition. Please use Google Chrome.");
