@@ -11,6 +11,7 @@ import (
 func RegisterAssessmentRoutes(router *mux.Router) {
 	assessmentRouter := router.PathPrefix("/api/v1/assessment").Subrouter()
 	assessmentRouter.HandleFunc("/upload", handlers.UploadHandler).Methods("POST") // Route for file upload
+	assessmentRouter.HandleFunc("/upload_video", handlers.UploadVideoHandler).Methods("POST")
 	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Game Service is healthy"))
