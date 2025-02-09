@@ -11,6 +11,7 @@ This project is designed using **Microservices Architecture** to support a **Fal
 6. [Known Issues and Limitations](#known-issues-and-limitations)
 
 ## Design Considerations of the Microservices
+The platform was initially developed as a **local microservices-based architecture** and later scaled with **Docker** to enhance deployment efficiency. This transition showcases the evolution of our solution from a traditional microservices setup to a cloud-native, containerized infrastructure. Our approach focuses on gradual improvements while maintaining system reliability and accessibility.
 
 ### 1. Service Decomposition
 
