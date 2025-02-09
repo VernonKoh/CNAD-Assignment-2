@@ -172,6 +172,7 @@ The FaceIO public ID needs to be renewed weekly as it is on a 7-day free trial. 
 **2. LionBee Chatbot (DeepSeek API)**
 The LionBee Chatbot utilizes the DeepSeek API. It uses an API key obtained from OpenRouter. Occasionally, the API may become disabled due to token limitations, which may cause the service to be unavailable at certain times. The API token needs to be manually enabled. If you encounter any errors, please contact Aaron so he can enable the API key.
 
+
 **Why Microservices Architecture?**
 1. Scalability: Individual services can be scaled based on demand. For example, Video Analysis Service can scale separately to handle increased processing loads.
 2. Fault Isolation: If one service goes down, the others continue running. This ensures higher reliability and uptime.
