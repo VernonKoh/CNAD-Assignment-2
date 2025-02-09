@@ -167,10 +167,10 @@ pip install opencv-python numpy mediapipe flask
 There are a few known issues and limitations in the system:
 
 **1. FaceIO Public ID**
-The FaceIO public ID needs to be renewed weekly as it is on a 7-day free trial. The current trial is valid until 16th February. Please contact Aaron (student developer) if you encounter any issues with the FaceIO service.
+The FaceIO public ID needs to be renewed weekly as it is on a **7-day free trial**. The current trial is valid until **16th February**. Please contact **Aaron (student developer)** if you encounter any issues with the FaceIO service.
 
 **2. LionBee Chatbot (DeepSeek API)**
-The LionBee Chatbot utilizes the DeepSeek API. It uses an API key obtained from OpenRouter. Occasionally, the API may become disabled due to token limitations, which may cause the service to be unavailable at certain times. The API token needs to be manually enabled. If you encounter any errors, please contact Aaron so he can enable the API key.
+The LionBee Chatbot utilizes the DeepSeek API. It uses an API key obtained from OpenRouter. Occasionally, the API may become **disabled** due to token limitations, which may cause the service to be unavailable at certain times. The API token needs to be **manually enabled**. If you encounter any errors, please contact **Aaron** so he can enable the API key.
 
 
 **Why Microservices Architecture?**
