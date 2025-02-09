@@ -17,7 +17,7 @@ The system is decomposed into distinct services that handle specific functionali
 - **User Service**: Manages user registration, authentication, and profile management. Users can sign up, log in, and access their assessment history.
 - **Assessment Service**: Handles the fall risk self-assessment questionnaire and scoring logic. Users answer a set of questions to evaluate their fall risk level.
 - **Game Service**: Provides a cognitive training game (Memory Card Matching) to improve mental agility. Tracks game progress and performance.
-- **Chatbot Service (LionBee API)**: A RESTful chatbot service that provides interactive support using speech-to-text technology. Supports four languages: English, Chinese, Malay, and Tamil.
+- **LionBee Chatbot Service (DeepSeek API)**: A RESTful chatbot service that provides interactive support using speech-to-text technology. Supports four languages: English, Chinese, Malay, and Tamil.
 - **Video Analysis Service & Posture Anlysis**: Uses AI-driven motion tracking to analyze walking patterns and detect fall risks. Processes video data for movement stability assessment.
 
 **Benefits of Service Decomposition**:
