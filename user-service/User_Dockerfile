@@ -2,7 +2,11 @@
 FROM debian:bullseye AS builder
 
 # Install Go in the builder stage
-RUN apt-get update && apt-get install -y golang git netcat
+RUN apt-get update && apt-get install -y golang git netcat ca-certificates
+
+RUN update-ca-certificates
+
+
 
 # Install wget and Go (latest version)
 RUN apt-get update && apt-get install -y wget && \
@@ -58,4 +62,4 @@ COPY --from=builder /app/user-service/main .
 EXPOSE 8081
 
 # Command to run the executable
-CMD ["./main"]
+CMD ["/app/main"]

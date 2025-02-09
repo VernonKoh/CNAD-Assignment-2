@@ -38,7 +38,7 @@ func NotifyUsers() {
 	// High-Risk Alerts
 	queryHighRisk := `
 	SELECT u.email, c.total_risk_score, c.completed_at
-	FROM CompletedAssessments c
+	FROM completed_assessments c
 	JOIN users u ON c.user_id = u.id
 	WHERE c.total_risk_score >= 4 AND c.total_risk_score <= 5
 	`

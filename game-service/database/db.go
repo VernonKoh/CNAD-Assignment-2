@@ -11,7 +11,7 @@ var DB *sql.DB
 
 func InitDB() {
 	var err error
-	DB, err = sql.Open("mysql", "user:password@tcp(127.0.0.1:3306)/elderly?parseTime=true&loc=Local")
+	DB, err = sql.Open("mysql", "user:password@tcp(database:3306)/elderly?parseTime=true&loc=Local")
 	if err != nil {
 		log.Fatalf("Failed to connect to the database: %v", err)
 	}

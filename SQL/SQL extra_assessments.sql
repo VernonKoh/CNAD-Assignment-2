@@ -1,11 +1,11 @@
 -- Populate the Assessments table
-INSERT INTO Assessments (name, description)
+INSERT INTO assessments (name, description)
 VALUES 
     ('Cardiovascular Health Check', 'Assessment to evaluate heart disease risk factors.'),
     ('Mental Wellness Assessment', 'Assessment to evaluate stress and anxiety levels.');
 
 -- Populate the Questions table
-INSERT INTO Questions (assessment_id, question_text, type)
+INSERT INTO questions (assessment_id, question_text, type)
 VALUES
    
     -- Questions for Cardiovascular Health Check
@@ -21,7 +21,7 @@ VALUES
     (3, 'How often do you feel overwhelmed?', 'mcq');
 
 -- Populate the Options table
-INSERT INTO Options (assessment_id, question_id, option_text, risk_value)
+INSERT INTO options (assessment_id, question_id, option_text, risk_value)
 VALUES
  
     -- Cardiovascular Health Check Options

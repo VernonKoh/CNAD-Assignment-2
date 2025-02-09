@@ -30,7 +30,6 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-
 -- Step 9: Create user_details table if it doesn't exist
 CREATE TABLE IF NOT EXISTS user_details (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -64,6 +63,10 @@ CREATE TABLE IF NOT EXISTS game_scores (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+<<<<<<< HEAD:SQL/SQL database.sql
+-- Step 14: Create the assessments table
+CREATE TABLE IF NOT EXISTS assessments (
+=======
 -- Add column only if it does not exist
 SET @query = IF(@col_exists = 0, 'ALTER TABLE game_scores ADD COLUMN time_taken INT NOT NULL DEFAULT 0;', 'SELECT "Column already exists";');
 PREPARE stmt FROM @query;
@@ -72,58 +75,62 @@ DEALLOCATE PREPARE stmt;
 
 -- Step 14: Create the Assessments table
 CREATE TABLE IF NOT EXISTS Assessments (
+>>>>>>> e62f610c7489058dbc208d450d8178cd47a166ba:SQL database.sql
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT
 );
 
--- Step 15: Create the Questions table
-CREATE TABLE IF NOT EXISTS Questions (
+-- Step 15: Create the questions table
+CREATE TABLE IF NOT EXISTS questions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     assessment_id INT NOT NULL,
     question_text TEXT NOT NULL,
     type ENUM('mcq', 'text', 'number') NOT NULL,
-    FOREIGN KEY (assessment_id) REFERENCES Assessments(id) ON DELETE CASCADE
+    FOREIGN KEY (assessment_id) REFERENCES assessments(id) ON DELETE CASCADE
 );
 
--- Step 16: Create Options table
-CREATE TABLE IF NOT EXISTS Options (
+-- Step 16: Create options table
+CREATE TABLE IF NOT EXISTS options (
     id INT AUTO_INCREMENT PRIMARY KEY,
     assessment_id INT NOT NULL,
     question_id INT NOT NULL,
     option_text TEXT NOT NULL,
     risk_value INT NOT NULL DEFAULT 0,
-    FOREIGN KEY (assessment_id) REFERENCES Assessments(id) ON DELETE CASCADE,
-    FOREIGN KEY (question_id) REFERENCES Questions(id) ON DELETE CASCADE
+    FOREIGN KEY (assessment_id) REFERENCES assessments(id) ON DELETE CASCADE,
+    FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
 );
 
--- Step 17: Create CompletedAssessments table (FIXED SYNTAX ERROR)
-CREATE TABLE IF NOT EXISTS CompletedAssessments (
+-- Step 17: Create completed_assessments table (FIXED SYNTAX ERROR)
+CREATE TABLE IF NOT EXISTS completed_assessments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     assessment_id INT NOT NULL,
     user_id INT NOT NULL,
     total_risk_score INT NOT NULL,
     completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (assessment_id) REFERENCES Assessments(id) ON DELETE CASCADE,
+    FOREIGN KEY (assessment_id) REFERENCES assessments(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Step 18: Create SelectedOptions table
-CREATE TABLE IF NOT EXISTS SelectedOptions (
+-- Step 18: Create selected_options table
+CREATE TABLE IF NOT EXISTS selected_options (
     id INT AUTO_INCREMENT PRIMARY KEY,
     completed_id INT NOT NULL,
     option_id INT NOT NULL,
-    FOREIGN KEY (completed_id) REFERENCES CompletedAssessments(id) ON DELETE CASCADE, 
-    FOREIGN KEY (option_id) REFERENCES Options(id) ON DELETE CASCADE
+    FOREIGN KEY (completed_id) REFERENCES completed_assessments(id) ON DELETE CASCADE, 
+    FOREIGN KEY (option_id) REFERENCES options(id) ON DELETE CASCADE
 );
 
+INSERT INTO doctors (email, password, name, license_number, hospital, is_verified)
+VALUES ('doctor@example.com', 'doctor123', 'Dr. John Doe', 'DOC123456', 'General Hospital', TRUE);
+
 -- Step 19: Insert assessment only if it doesn’t exist
-INSERT INTO Assessments (id, name, description)
+INSERT INTO assessments (id, name, description)
 VALUES (1, 'Elderly Fall Risk Assessment', 'Assessment to determine fall risk for elderly individuals.')
 ON DUPLICATE KEY UPDATE name = name;
 
 -- Step 20: Insert questions only if they don’t exist
-INSERT INTO Questions (id, assessment_id, question_text, type)
+INSERT INTO questions (id, assessment_id, question_text, type)
 VALUES
     (1, 1, 'What is your age range?', 'mcq'),
     (2, 1, 'Do you experience dizziness when standing?', 'mcq'),
@@ -132,7 +139,7 @@ VALUES
 ON DUPLICATE KEY UPDATE question_text = question_text;
 
 -- Step 21: Insert options only if they don’t exist
-INSERT INTO Options (id, assessment_id, question_id, option_text, risk_value)
+INSERT INTO options (id, assessment_id, question_id, option_text, risk_value)
 VALUES
     (1, 1, 1, 'Under 50', 0),
     (2, 1, 1, '50-60', 1),
@@ -155,12 +162,12 @@ ON DUPLICATE KEY UPDATE option_text = option_text;
 -- Set Column to FALSE, once email is sent update to TRUE
 -- Check if the column 'notified' exists before adding it
 SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
-                   WHERE TABLE_NAME = 'CompletedAssessments' 
+                   WHERE TABLE_NAME = 'completed_assessments' 
                    AND COLUMN_NAME = 'notified' 
                    AND TABLE_SCHEMA = DATABASE());
 
 -- Add column only if it does not exist
-SET @query = IF(@col_exists = 0, 'ALTER TABLE CompletedAssessments ADD COLUMN notified BOOLEAN DEFAULT FALSE;', 'SELECT "Column already exists";');
+SET @query = IF(@col_exists = 0, 'ALTER TABLE completed_assessments ADD COLUMN notified BOOLEAN DEFAULT FALSE;', 'SELECT "Column already exists";');
 PREPARE stmt FROM @query;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
