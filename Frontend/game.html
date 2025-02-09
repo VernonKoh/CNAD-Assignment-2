@@ -285,15 +285,17 @@ function checkGameOver() {
             },
             body: JSON.stringify(gameData)
         })
-        .then(response => response.json())
-        .then(data => {
+        .then(response => {
+            console.log("Backend Response: ", response);
+            return response.json();
+})        .then(data => {
             if (data.message) {
                 // ✅ Store user score & time in localStorage for gamescore.html
                 localStorage.setItem("lastGameScore", score);
                 localStorage.setItem("lastGameTime", elapsedTime);
 
                 // ✅ Redirect user to `gamescore.html`
-                window.location.href = "gamescore.html";
+                window.location.href = "http://localhost:8080/gamescore.html";
             } else {
                 alert("❌ Error saving score. Try again.");
             }

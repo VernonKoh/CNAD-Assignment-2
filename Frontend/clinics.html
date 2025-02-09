@@ -146,9 +146,13 @@
         <p id="locationText">Loading... <span class="loader"></span></p>
     </div>
 
+    <iframe id="fontWidget" src="font_widget.html" style="position: fixed; bottom: 20px; right: 20px; border: none;"></iframe>
+
+
     <!-- Map -->
     <h2>Nearby Clinics on Map:</h2>
     <div id="map"></div>
+
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
@@ -312,6 +316,31 @@
                 }
             }
         loadNavbar();  // Load navbar dynamically
+
+        window.addEventListener('message', (event) => {
+            // Log the received message for debugging
+            console.log('Message received from iframe:', event.data);
+
+            // Ensure the message is coming from the expected origin
+            if (event.origin !== window.location.origin) {
+                console.error('Invalid origin:', event.origin);
+                return;
+            }
+
+            const scaleFactor = parseFloat(event.data);
+
+            // Apply the scale factor to the parent document
+            if (!isNaN(scaleFactor)) {
+                document.body.style.fontSize = `${16 * scaleFactor}px`; // Base font size
+                document.querySelectorAll('h1, h2, h3, p, span').forEach(element => {
+                    const originalSize = window.getComputedStyle(element).fontSize;
+                    const newSize = parseFloat(originalSize) * scaleFactor;
+                    element.style.fontSize = `${newSize}px`;
+                });
+            } else {
+                console.error('Invalid scale factor:', event.data);
+            }
+        });
 
         // Initialize the page
         window.onload = () => {

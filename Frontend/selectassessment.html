@@ -1,32 +1,149 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Select Assessment</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7fc;
+        }
+
+        header {
+            background-color: #007bff;
+            color: white;
+            padding: 20px 40px;
+            text-align: center;
+        }
+
+        h2 {
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        .assessment-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .assessment-item {
+            background-color: #fff;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+
+        .assessment-item:hover {
+            background-color: #f0f8ff;
+            transform: translateY(-5px);
+        }
+
+        .assessment-item a {
+            text-decoration: none;
+            font-size: 1.2rem;
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .assessment-item a:hover {
+            color: #0056b3;
+        }
+
+        .loading {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #007bff;
+        }
+
+        .error-message {
+            color: red;
+            font-size: 1rem;
+            text-align: center;
+        }
+    </style>
 </head>
+
 <body>
-    <h2>Select an Assessment</h2>
-    <ul id="assessmentsList"></ul>
+    <div id="navbar-container"></div>
+    <header>
+        <h2>Select an Assessment</h2>
+    </header>
+
+    <div class="container">
+        <div id="loading" class="loading">Loading assessments...</div>
+        <ul id="assessmentsList" class="assessment-list"></ul>
+        <div id="errorMessage" class="error-message"></div>
+    </div>
+
+    
 
     <script>
         async function fetchAssessments() {
             try {
                 const response = await fetch("http://localhost:8081/api/v1/users/assessments");
                 const assessments = await response.json();
-                
+
                 const list = document.getElementById("assessmentsList");
+                const loading = document.getElementById("loading");
+                loading.style.display = "none"; // Hide loading message
+
+                if (assessments.length === 0) {
+                    list.innerHTML = '<li>No assessments available.</li>';
+                    return;
+                }
+
                 assessments.forEach(a => {
                     const listItem = document.createElement("li");
+                    listItem.classList.add("assessment-item");
                     listItem.innerHTML = `<a href="riskassessment.html?quizId=${a.id}">${a.name}</a>`;
                     list.appendChild(listItem);
                 });
             } catch (error) {
+                const loading = document.getElementById("loading");
+                const errorMessage = document.getElementById("errorMessage");
+                loading.style.display = "none"; // Hide loading message
+                errorMessage.textContent = "Error fetching assessments. Please try again later.";
                 console.error("Error fetching assessments:", error);
             }
         }
 
         fetchAssessments();
+    
+        // Dynamically load the navbar
+    async function loadNavbar() {
+                try {
+                    const response = await fetch('navbar.html');
+                    if (response.ok) {
+                        const navbarHTML = await response.text();
+                        document.getElementById('navbar-container').innerHTML = navbarHTML;
+                    } else {
+                        console.error("Failed to load navbar: ", response.status, response.statusText);
+                    }
+                } catch (error) {
+                    console.error('Failed to load navbar:', error);
+                }
+            }
+            loadNavbar();  // Load navbar dynamically
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
+
 </html>
