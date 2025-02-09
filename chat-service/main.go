@@ -42,7 +42,7 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 	resp, err := client.R().
 		SetHeader("Authorization", "Bearer "+openRouterAPIKey).
 		SetHeader("Content-Type", "application/json").
-		SetHeader("HTTP-Referer", "http://localhost:8081"). // ✅ Corrected for local testing
+		SetHeader("HTTP-Referer", "http://localhost:8081").
 		SetHeader("X-Title", "Lion Befrienders Chatbot").
 		SetBody(map[string]interface{}{
 			"model": "deepseek/deepseek-chat",
@@ -65,13 +65,11 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Ensure chatbot response is not empty
 	if len(chatbotResponse.Choices) == 0 || chatbotResponse.Choices[0].Message.Content == "" {
 		http.Error(w, "Chatbot returned an empty response", http.StatusInternalServerError)
 		return
 	}
 
-	// Send chatbot response back to frontend
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(chatbotResponse)
 }
@@ -83,7 +81,6 @@ func enableCORS(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
-		// Handle preflight (OPTIONS request)
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
 			return
@@ -93,7 +90,7 @@ func enableCORS(next http.Handler) http.Handler {
 	})
 }
 
-func main() {
+func startChatbot() {
 	router := mux.NewRouter()
 	routes.SetupRoutes(router)
 
@@ -101,31 +98,27 @@ func main() {
 	handler := enableCORS(router)
 
 	port := "8084"
-	fmt.Println("Chatbot microservice running on http://localhost:" + port)
+	fmt.Println("🗨️ Chatbot microservice running on http://localhost:" + port)
 	log.Fatal(http.ListenAndServe(":"+port, handler))
+}
 
-	// ✅ Use Python to run microphone recording
+func startVoiceRecognition() {
+	fmt.Println("🎤 Starting voice recognition...")
+
 	cmd := exec.Command("python", "record_audio.py")
-	cmd.Stderr = os.Stderr // Print errors to terminal
-	cmd.Stdout = os.Stdout // Print output to terminal
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
 	err := cmd.Run()
 
 	if err != nil {
-		fmt.Println("Error running microphone recording:", err)
+		fmt.Println("❌ Error running microphone recording:", err)
 	} else {
-		fmt.Println("Microphone recording ran successfully")
+		fmt.Println("✅ Microphone recording ran successfully")
 	}
+}
 
-	// // ✅ Test with a sample audio file (Replace with your own)
-	// audioFile := "knees.wav"
-
-	// // Run the Python script to process the audio
-	// cmd := exec.Command("python", "test_vosk.py", audioFile)
-	// output, err := cmd.CombinedOutput()
-
-	// if err != nil {
-	// 	fmt.Println("Error running Vosk:", err)
-	// } else {
-	// 	fmt.Println("Transcribed Text:\n", string(output))
-	// }
+func main() {
+	// ✅ Run Chatbot API & Voice Recognition in Parallel
+	go startChatbot()       // 🔹 Runs chatbot in a separate goroutine
+	startVoiceRecognition() // 🔹 Runs voice recording in the main goroutine
 }
