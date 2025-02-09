@@ -2,6 +2,7 @@ package routes
 
 import (
 	"CNAD_Assignment_2/user-service/handlers"
+	"net/http"
 
 	"github.com/gorilla/mux"
 )
@@ -42,6 +43,13 @@ func RegisterUserRoutes(router *mux.Router) {
 	userRouter.HandleFunc("/assessments", handlers.CreateAssessment).Methods("POST") // New route
 	userRouter.HandleFunc("/questions", handlers.CreateQuestion).Methods("POST")
 	userRouter.HandleFunc("/options", handlers.CreateOption).Methods("POST")
+	userRouter.HandleFunc("/assessments/{id}", handlers.DeleteAssessment).Methods("DELETE")
+
+	// ✅ ADD Health Check Route (NEW)
+	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("User Service is healthy"))
+	}).Methods("GET")
 
 }
 
@@ -75,3 +83,6 @@ func RegisterUserRoutes(router *mux.Router) {
 
 //create option
 //curl -X POST http://localhost:8081/api/v1/users/options -H "Content-Type: application/json" -d "{\"assessment_id\":4,\"question_id\":1,\"option_text\":\"Low Risk\",\"risk_value\":1}"
+
+//delete assessment
+//curl -X DELETE http://localhost:8081/api/v1/users/assessments/19

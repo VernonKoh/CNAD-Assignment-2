@@ -39,4 +39,10 @@ func main() {
 	port := ":8083"
 	fmt.Printf("Game Service is running on http://localhost%s\n", port)
 	log.Fatal(http.ListenAndServe(port, handler))
+
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Game Service is healthy"))
+	})
+
 }

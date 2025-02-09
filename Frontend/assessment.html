@@ -4,65 +4,281 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Posture Analysis</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <style>
+        /* General Styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #343a40;
+        }
+        /* Buttons */
+        button {
+            background-color: #0d6efd;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0b5ed7;
+        }
+        /* Form Styling */
+        form {
+            margin: 20px 0;
+        }
+        input[type="file"] {
+            margin-bottom: 10px;
+        }
+        /* Webcam Preview */
+        #webcamPreview {
+            max-width: 100%;
+            border: 2px solid #0d6efd;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+        /* Image Display */
+        #capturedImage {
+            max-width: 100%;
+            height: auto;
+            border: 2px solid #0d6efd;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+        /* Navbar Container */
+        #navbar-container {
+            margin-bottom: 20px;
+        }
+        /* Posture Analysis Results */
+        #analysisResults {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .analysis-item {
+            margin-bottom: 10px;
+        }
+        .analysis-item.warning {
+            color: #ffc107; /* Yellow for warnings */
+        }
+        .analysis-item.high-risk {
+            color: #dc3545; /* Red for high risk */
+        }
+        .analysis-item.success {
+            color: #198754; /* Green for success */
+        }
+        /* Hide Headers by Default */
+        #processedImageHeader, #postureAnalysisHeader {
+            display: none;
+        }
+        /* Redirect Button */
+        #redirectButton {
+            display: none; /* Hidden by default */
+            background-color: #dc3545; /* Red for urgency */
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
+    <!-- Navbar Container -->
+    <div id="navbar-container"></div>
     <h1>Posture Analysis</h1>
 
-    <!-- Buttons to switch between Image Upload and Webcam -->
-    <button id="uploadMode">Upload Image</button>
-    <button id="webcamMode">Live Webcam</button>
+    <h2>Upload an image of your full body standing upright</h2>
 
-    <!-- Image Upload Form -->
+
+    <!-- Combined Upload/Take Picture Form -->
     <form id="uploadForm" enctype="multipart/form-data">
-        <input type="file" name="image" id="file" accept="image/*, video/*" required>
-        <button type="submit">Upload</button>
+        <div style="margin-top: 10px;">
+            <input type="file" name="image" id="file" accept="image/*" style="display: none;" required>
+            <button type="button" id="takePictureBtn" style="background-color: #28a745;">Take Picture</button>
+            <button type="button" id="uploadFileBtn" style="background-color: #ffc107;">Upload File</button>
+        </div>
+        <video id="webcamPreview" autoplay playsinline></video>
+        <button type="button" id="confirmPictureBtn" style="background-color: #198754; display: none;">Confirm Picture</button>
+        <img id="capturedImage" alt="Captured Image" style="display: none;" />
+        <button type="submit" style="margin-top: 10px;">Submit</button>
     </form>
-    <h2>Posture Analysis:</h2>
-    <pre id="analysisResults"></pre>
-    <h2>Processed Image:</h2>
+
+    <!-- Posture Analysis Section -->
+    <h2 id="postureAnalysisHeader">Posture Analysis:</h2>
+    <div id="analysisResults"></div>
+
+    <!-- Redirect Button -->
+    <button id="redirectButton">Find Nearby Clinics</button>
+
+    <!-- Processed Image Section -->
+    <h2 id="processedImageHeader">Processed Image:</h2>
     <img id="processedImage" style="max-width: 100%; border: 2px solid black; display: none;" />
 
-    <!-- Webcam Feed -->
-    <h2>Live Webcam:</h2>
-    <img id="webcamFeed" src="" style="max-width: 100%; border: 2px solid black; display: none;" />
-
     <script>
+        let videoStream;
+
+        // Handle form submission
         document.getElementById('uploadForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-
             const formData = new FormData();
             const fileInput = document.getElementById('file');
+            if (!fileInput.files[0]) {
+                alert("Please select a file or take a picture.");
+                return;
+            }
             formData.append('image', fileInput.files[0]);
-
             try {
-                const response = await fetch('/api/v1/assessment/upload', {
+                const response = await fetch('http://localhost:8082/api/v1/assessment/upload', {
                     method: 'POST',
                     body: formData,
                 });
-
                 const data = await response.json();
-                document.getElementById('analysisResults').textContent = JSON.stringify(data.analysis, null, 2);
-                document.getElementById('processedImage').src = data.image_url;
-                document.getElementById('processedImage').style.display = "block";
-                document.getElementById('webcamFeed').style.display = "none";
+
+                // Update processed image with a cache-busting query string
+                const processedImage = document.getElementById('processedImage');
+                processedImage.src = `${data.image_url}?${Date.now()}`;
+                processedImage.style.display = "block";
+                document.getElementById('processedImageHeader').style.display = "block"; // Show header
+
+                // Display posture analysis results
+                displayAnalysisResults(data.analysis);
+
+                // Hide the captured image after submission
+                document.getElementById('capturedImage').style.display = "none";
+
+                // Show Posture Analysis header
+                document.getElementById('postureAnalysisHeader').style.display = "block";
             } catch (error) {
                 console.error('Error:', error);
             }
         });
 
-        // Toggle between Image Upload and Webcam Mode
-        document.getElementById('uploadMode').addEventListener('click', () => {
-            document.getElementById('uploadForm').style.display = "block";
-            document.getElementById('processedImage').style.display = "none";
-            document.getElementById('webcamFeed').style.display = "none";
+        // Function to display posture analysis results
+        function displayAnalysisResults(analysis) {
+            const analysisResultsDiv = document.getElementById('analysisResults');
+            analysisResultsDiv.innerHTML = ''; // Clear previous results
+
+            if (Object.keys(analysis).length === 0) {
+                // If no issues are detected
+                const noIssuesMessage = document.createElement('div');
+                noIssuesMessage.textContent = "No severe issues with posture detected.";
+                noIssuesMessage.classList.add('analysis-item', 'success');
+                analysisResultsDiv.appendChild(noIssuesMessage);
+
+                // Hide the redirect button if no issues
+                document.getElementById('redirectButton').style.display = "none";
+            } else {
+                // Parse and display each analysis result
+                for (const [key, value] of Object.entries(analysis)) {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.classList.add('analysis-item');
+
+                    // Determine severity level based on the message
+                    if (value.includes("Warning")) {
+                        itemDiv.classList.add('warning');
+                    } else if (value.includes("High Risk")) {
+                        itemDiv.classList.add('high-risk');
+                    }
+
+                    // Format the text for better readability
+                    const formattedKey = key.replace(/_/g, ' ').toUpperCase(); // Convert keys to readable format
+                    itemDiv.textContent = `${formattedKey}: ${value}`;
+                    analysisResultsDiv.appendChild(itemDiv);
+                }
+
+                // Show the redirect button if issues are detected
+                document.getElementById('redirectButton').style.display = "block";
+            }
+        }
+
+        // Redirect to clinics.html when the button is clicked
+        document.getElementById('redirectButton').addEventListener('click', () => {
+            window.location.href = "clinics.html";
         });
 
-        document.getElementById('webcamMode').addEventListener('click', () => {
-            document.getElementById('uploadForm').style.display = "none";
-            document.getElementById('processedImage').style.display = "none";
-            document.getElementById('webcamFeed').src = "http://127.0.0.1:5000/webcam";
-            document.getElementById('webcamFeed').style.display = "block";
+        // Dynamically load the navbar
+        async function loadNavbar() {
+            try {
+                const response = await fetch('navbar.html');
+                if (response.ok) {
+                    const navbarHTML = await response.text();
+                    document.getElementById('navbar-container').innerHTML = navbarHTML;
+                } else {
+                    console.error("Failed to load navbar: ", response.status, response.statusText);
+                }
+            } catch (error) {
+                console.error('Failed to load navbar:', error);
+            }
+        }
+        loadNavbar();  // Load navbar dynamically
+
+        // Take Picture Functionality
+        document.getElementById('takePictureBtn').addEventListener('click', async () => {
+            const webcamPreview = document.getElementById('webcamPreview');
+            const confirmPictureBtn = document.getElementById('confirmPictureBtn');
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                webcamPreview.srcObject = videoStream;
+                webcamPreview.style.display = 'block';
+                confirmPictureBtn.style.display = 'inline-block';
+            } catch (error) {
+                console.error('Error accessing webcam:', error);
+                alert("Failed to access webcam. Please ensure permissions are granted.");
+            }
+        });
+
+        // Confirm Picture Capture
+        document.getElementById('confirmPictureBtn').addEventListener('click', () => {
+            const webcamPreview = document.getElementById('webcamPreview');
+            const canvas = document.createElement('canvas');
+            canvas.width = webcamPreview.videoWidth;
+            canvas.height = webcamPreview.videoHeight;
+            canvas.getContext('2d').drawImage(webcamPreview, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(async (blob) => {
+                const file = new File([blob], 'captured-image.jpg', { type: 'image/jpeg' });
+                const fileInput = document.getElementById('file');
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                fileInput.files = dataTransfer.files;
+
+                // Stop the webcam stream
+                videoStream.getTracks().forEach(track => track.stop());
+                webcamPreview.style.display = 'none';
+                document.getElementById('confirmPictureBtn').style.display = 'none';
+
+                // Display the captured image
+                const capturedImage = document.getElementById('capturedImage');
+                capturedImage.src = URL.createObjectURL(blob);
+                capturedImage.style.display = 'block';
+            }, 'image/jpeg');
+        });
+
+        // Trigger File Upload
+        document.getElementById('uploadFileBtn').addEventListener('click', () => {
+            document.getElementById('file').click();
+        });
+
+        // Show Uploaded File as Image
+        document.getElementById('file').addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const capturedImage = document.getElementById('capturedImage');
+                capturedImage.src = URL.createObjectURL(file);
+                capturedImage.style.display = 'block';
+            }
         });
     </script>
+    <!-- Bootstrap JavaScript Bundle (for Navbar and Components) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
