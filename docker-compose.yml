@@ -13,6 +13,7 @@ services:
       - SMTP_PASS=kket mgmy ymea ywuz
       - SMTP_HOST=smtp.gmail.com
       - SMTP_PORT=587  # or 587 if you're using TLS
+      - DB_HOST=database  # Add DB_HOST here, pointing to the database service
 
   game-service:
     build:
@@ -23,6 +24,8 @@ services:
     networks:
       - app-network
     command: /bin/bash -c "until nc -z database 3306; do echo 'Waiting for MySQL...'; sleep 2; done && /app/main"
+    environment:
+      - DB_HOST=database  # Add DB_HOST here, pointing to the database service
 
   assessment-service:
     build:
@@ -30,9 +33,12 @@ services:
       dockerfile: ./assessment-service/Assessment_Dockerfile
     ports:
       - "8082:8082"
+      - "5000:5000"  # Expose port 5000
     networks:
       - app-network
     command: /bin/bash -c "until nc -z database 3306; do echo 'Waiting for MySQL...'; sleep 2; done && /app/main"
+    environment:
+      - DB_HOST=database  # Add DB_HOST here, pointing to the database service
 
   frontend:
     build:
@@ -44,10 +50,10 @@ services:
     networks:
       - app-network
     volumes:
-    - ./Frontend:/usr/share/nginx/html  # Mount the frontend directory
+      - ./Frontend:/usr/share/nginx/html  # Mount the frontend directory
     depends_on:
-    - user-service
-    - database
+      - user-service
+      - database
 
   database:
     image: mysql:8.0
