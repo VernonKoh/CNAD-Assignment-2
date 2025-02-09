@@ -84,7 +84,11 @@ pip install opencv-python numpy mediapipe flask
    - Start other services manually in separate terminal windows:
      ```sh
      go run assessment-service/main.go
+     ```
+     ```sh
      go run chat-service/main.go
+     ```
+     ```sh
      py mediapipe_server.py
      ```
 5. Access the application:
