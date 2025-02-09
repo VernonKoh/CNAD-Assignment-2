@@ -174,12 +174,12 @@ The LionBee Chatbot utilizes the DeepSeek API. It uses an API key obtained from 
 
 
 **Why Microservices Architecture?**
-1. Scalability: Individual services can be scaled based on demand. For example, Video Analysis Service can scale separately to handle increased processing loads.
-2. Fault Isolation: If one service goes down, the others continue running. This ensures higher reliability and uptime.
-3. Independent Databases: Each service manages its own database, improving data security and reducing dependencies.
-4. Flexibility and Maintainability:
-   - Independent Development: Teams can work on different services simultaneously.
-   - Faster Deployments: Updates to one service do not require changes to others.
+1. **Scalability:** Individual services can be scaled based on demand. For example, Video Analysis Service can scale separately to handle increased processing loads.
+2. **Fault Isolation:** If one service goes down, the others continue running. This ensures higher reliability and uptime.
+3. **Independent Databases:** Each service manages its own database, improving data security and reducing dependencies.
+4. **Flexibility and Maintainability:**
+   - *Independent Development:* Teams can work on different services simultaneously.
+   - *Faster Deployments:* Updates to one service do not require changes to others.
      
 ## 7. Conclusion
 This microservices-based Fall Risk Self-Assessment System ensures a scalable, resilient, and modular solution. By leveraging RESTful APIs, independent databases, and containerized deployments, this architecture enhances flexibility, maintainability, and long-term system performance.
