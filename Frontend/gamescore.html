@@ -117,7 +117,7 @@
         document.getElementById("memory-rating").textContent = `🔍 Memory Rating: ${getMemoryRating(lastGameTime)}`;
 
         // ✅ Fetch and display past scores
-        fetch(`http://localhost:8080/game/scores/${userID}`)
+        fetch(`http://localhost:8083/game/scores/${userID}`)
             .then(response => response.json())
             .then(data => {
                 console.log("Fetched Scores:", data); // ✅ Debug Output

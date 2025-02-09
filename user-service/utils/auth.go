@@ -84,7 +84,7 @@ func SendVerificationEmail(to, verificationLink string) error {
 	// Create a custom TLS config
 	tlsConfig := &tls.Config{
 		ServerName:         "smtp.gmail.com", // Add the correct SMTP server here
-		InsecureSkipVerify: false,            // Don't skip certificate verification in production!
+		InsecureSkipVerify: true,             // Don't skip certificate verification in production!
 	}
 
 	dialer := gomail.NewDialer(DefaultSMTPConfig.Host, DefaultSMTPConfig.Port, DefaultSMTPConfig.Username, DefaultSMTPConfig.Password)

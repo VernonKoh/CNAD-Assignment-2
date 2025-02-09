@@ -9,10 +9,11 @@ services:
       - app-network
     command: /bin/bash -c "until nc -z database 3306; do echo 'Waiting for MySQL...'; sleep 2; done && /app/main"
     environment:
-      - SMTP_USER=avengersenemysg@gmail.com
-      - SMTP_PASS=your-app-specific-password
+      - SMTP_USER=checkme123ymail.com@gmail.com
+      - SMTP_PASS=kket mgmy ymea ywuz
       - SMTP_HOST=smtp.gmail.com
-      - SMTP_PORT=465  # or 587 if you're using TLS
+      - SMTP_PORT=587  # or 587 if you're using TLS
+
   game-service:
     build:
       context: .
