@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Assessment</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .container { max-width: 800px; margin: 20px auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        h1 { font-size: 24px; margin-bottom: 20px; }
+        input, textarea { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px; }
+        button { padding: 10px 20px; background-color: #007BFF; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        .question { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 4px; background-color: #fafafa; }
+        .question-header { font-weight: bold; margin-bottom: 10px; }
+        .option-list { margin-top: 15px; }
+        .option { margin-bottom: 15px; padding: 10px; background-color: #fff; border: 1px solid #ddd; border-radius: 4px; }
+        .delete-btn { color: red; cursor: pointer; margin-left: 10px; font-size: 14px; }
+        .option-input { margin-bottom: 10px; }
+        .add-btn-container { margin-top: 15px; }
+        .question-actions { margin-top: 10px; }
+        .question-actions button { margin-right: 10px; }
+        .container h2 { font-size: 20px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Create Assessment</h1>
+
+        <div class="form-group">
+            <label for="name">Assessment Name</label>
+            <input type="text" id="name" placeholder="Enter assessment name" required>
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" placeholder="Enter assessment description" required></textarea>
+        </div>
+
+        <div id="questions-container"></div>
+
+        <div class="form-group">
+            <button id="add-question-btn">Add Question</button>
+        </div>
+
+
+        <button id="create-assessment-btn">Create Assessment</button>
+    </div>
+
+    <script>
+        let assessmentData = {
+            name: "",
+            description: "",
+            questions: [],
+            assessmentId: null  // Store the created assessment ID here
+        };
+
+        // Define functions before usage
+        function createOptionElement(questionId, optionId) {
+            const optionDiv = document.createElement("div");
+            optionDiv.classList.add("option");
+
+            const optionInput = document.createElement("input");
+            optionInput.type = "text";
+            optionInput.classList.add("option-input");
+            optionInput.placeholder = `Option ${optionId}: Enter option`;
+            optionInput.addEventListener("input", function () {
+                updateOptionText(questionId, optionId, this.value);
+            });
+
+            const riskValueInput = document.createElement("input");
+            riskValueInput.type = "number";
+            riskValueInput.classList.add("option-input");
+            riskValueInput.placeholder = "Enter risk value";
+
+            riskValueInput.addEventListener("input", function () {
+                updateOptionRiskValue(questionId, optionId, this.value);
+            });
+
+            const deleteOptionBtn = document.createElement("span");
+            deleteOptionBtn.innerText = "Delete Option";
+            deleteOptionBtn.classList.add("delete-btn");
+            deleteOptionBtn.addEventListener("click", function () {
+                deleteOption(questionId, optionId);
+                optionDiv.remove();
+            });
+
+            optionDiv.appendChild(optionInput);
+            optionDiv.appendChild(riskValueInput);
+            optionDiv.appendChild(deleteOptionBtn);
+
+            // Add option to the question's options array immediately when created
+            const question = assessmentData.questions.find(q => q.id === questionId);
+            if (question) {
+                question.options.push({
+                    id: optionId,
+                    option_text: "",
+                    risk_value: 0
+                });
+            }
+
+            return optionDiv;
+        }
+
+        function updateOptionText(questionId, optionId, text) {
+            const question = assessmentData.questions.find(q => q.id === questionId);
+            if (question) {
+                const option = question.options.find(o => o.id === optionId);
+                if (option) {
+                    option.option_text = text;
+                }
+            }
+        }
+
+        function updateOptionRiskValue(questionId, optionId, value) {
+            const question = assessmentData.questions.find(q => q.id === questionId);
+            if (question) {
+                const option = question.options.find(o => o.id === optionId);
+                if (option) {
+                    option.risk_value = parseInt(value, 10);  // Ensures risk value is treated as integer
+                }
+            }
+        }
+
+        function deleteOption(questionId, optionId) {
+            const question = assessmentData.questions.find(q => q.id === questionId);
+            if (question) {
+                question.options = question.options.filter(o => o.id !== optionId);
+            }
+        }
+
+        function deleteQuestion(questionId) {
+            assessmentData.questions = assessmentData.questions.filter(q => q.id !== questionId);
+        }
+
+        // Event Listeners for user input
+        document.getElementById("name").addEventListener("input", function () {
+            assessmentData.name = this.value;
+        });
+
+        document.getElementById("description").addEventListener("input", function () {
+            assessmentData.description = this.value;
+        });
+
+        document.getElementById("add-question-btn").addEventListener("click", function () {
+            const questionId = assessmentData.questions.length + 1;
+            const assessmentId = assessmentData.assessmentId;  // Use the stored assessment ID
+
+            const questionElement = createQuestionElement(questionId, assessmentId);
+            document.getElementById("questions-container").appendChild(questionElement);
+            assessmentData.questions.push({
+                id: questionId,
+                assessment_id: assessmentId,
+                question_text: "",
+                options: []
+            });
+        });
+        document.getElementById("create-assessment-btn").addEventListener("click", async function () {
+            const button = this; // Reference to the button
+
+    if (!assessmentData.name || !assessmentData.description) {
+        alert("Please provide a name and description for the assessment.");
+        return;
+    }
+        // Disable the button to prevent multiple clicks
+        button.disabled = true;
+        button.textContent = "Creating...";
+
+    
+    
+    console.log("Creating assessment with data:", {
+        name: assessmentData.name,
+        description: assessmentData.description
+    });
+
+    try {
+        // Step 1: Create Assessment (POST request)
+        const response = await fetch("http://localhost:8081/api/v1/users/assessments", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                name: assessmentData.name,
+                description: assessmentData.description
+            })
+        });
+
+        console.log("Assessment creation response status:", response.status); // Log status code
+        const data = await response.json();
+        console.log("Assessment creation response data:", data);  // Check the response data
+
+        // Check if the response contains the assessment_id
+        if (data && data.assessment_id) {
+            assessmentData.assessmentId = data.assessment_id;  // Use assessment_id from response
+            console.log(`Created Assessment with ID: ${assessmentData.assessmentId}`);
+
+            // Step 2: Create Questions and Options
+            for (let question of assessmentData.questions) {
+                await createQuestion(question); // Wait for the question to be created
+                console.log("Created question with ID:", question.id);  // Now question.id should be set
+
+                for (let option of question.options) {
+                    await createOption(option, question.id); // Create options for each question
+                }
+            }
+
+            alert("Assessment, questions, and options created successfully!");
+              // Change the button to "Return Home"
+              button.textContent = "Return Home";
+            button.disabled = false; // Enable button again
+            button.addEventListener("click", function () {
+                window.location.href = "http://localhost:8081/manage_assessments.html";
+            });
+        } else {
+            alert("Failed to create assessment. Please try again.");
+            button.disabled = false;
+            button.textContent = "Create Assessment"; // Reset button in case of failure
+                }
+    } catch (error) {
+        console.error("Error creating assessment:", error);
+        alert("An error occurred while creating the assessment.");
+        button.disabled = false;
+        button.textContent = "Create Assessment"; // Reset button in case of error
+    }
+});
+
+function createQuestion(question) {
+    // Log the data being sent in the request
+    const requestData = {
+        assessment_id: assessmentData.assessmentId,
+        question_text: question.question_text,
+        type: "mcq" // or the desired question type
+    };
+
+    console.log("Sending question data:", requestData); // Log the request data
+
+    return fetch("http://localhost:8081/api/v1/users/questions", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("Question created successfully:", data); // Log the response from the server
+        if (data && data.question_id) {
+            question.id = data.question_id;  // Save the created question ID
+        } else {
+            console.warn("No question ID returned in response.");
+        }
+    })
+    .catch(error => {
+        console.error("Error creating question:", error); // Log any errors that occur
+    });
+}
+
+        function createOption(option, questionId) {
+            // Log the data being sent in the request
+            const requestData = {
+                assessment_id: assessmentData.assessmentId,
+                question_id: questionId,
+                option_text: option.option_text,
+                risk_value: option.risk_value
+            };
+
+            console.log("Sending option data:", requestData); // Log the request data
+
+            fetch("http://localhost:8081/api/v1/users/options", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Option created successfully:", data);
+            })
+            .catch(error => {
+                console.error("Error creating option:", error);
+                // Log the response to better understand the error
+                error.response?.json().then(errData => console.log("Error Response:", errData));
+            });
+        }
+
+        function createQuestionElement(questionId, assessmentId) {
+            const questionDiv = document.createElement("div");
+            questionDiv.classList.add("question");
+            questionDiv.id = `question-${questionId}`;
+
+            const questionTitle = document.createElement("input");
+            questionTitle.type = "text";
+            questionTitle.classList.add("question-input");
+            questionTitle.placeholder = `Question ${questionId}: Enter question name`;
+            questionTitle.addEventListener("input", function () {
+                updateQuestionText(questionId, this.value);
+            });
+
+            const optionsContainer = document.createElement("div");
+            optionsContainer.classList.add("option-list");
+
+            const addOptionBtn = document.createElement("button");
+            addOptionBtn.innerText = "Add Option";
+            addOptionBtn.addEventListener("click", function () {
+                const optionId = optionsContainer.children.length + 1;
+                const optionElement = createOptionElement(questionId, optionId);
+                optionsContainer.appendChild(optionElement);
+            });
+
+            const deleteQuestionBtn = document.createElement("button");
+            deleteQuestionBtn.innerText = "Delete Question";
+            deleteQuestionBtn.addEventListener("click", function () {
+                deleteQuestion(questionId);
+                questionDiv.remove();
+            });
+
+            questionDiv.appendChild(questionTitle);
+            questionDiv.appendChild(optionsContainer);
+            questionDiv.appendChild(addOptionBtn);
+            questionDiv.appendChild(deleteQuestionBtn);
+
+            return questionDiv;
+        }
+
+        function updateQuestionText(questionId, text) {
+            const question = assessmentData.questions.find(q => q.id === questionId);
+            if (question) {
+                question.question_text = text;
+            }
+        }
+    </script>
+</body>
+
+</html>
