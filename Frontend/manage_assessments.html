@@ -150,6 +150,8 @@
         <button class="create-btn" onclick="location.href='create_assessment.html'">➕ Create New Assessment</button>
     </div>
 
+    <iframe id="fontWidget" src="font_widget.html" style="position: fixed; bottom: 20px; right: 20px; border: none;"></iframe>
+
     <script>
         async function fetchAssessments() {
             const response = await fetch("http://localhost:8081/api/v1/users/assessments");
@@ -199,6 +201,67 @@
         }
 
         fetchAssessments();
+
+
+        // Store the initial font sizes of all elements
+        const initialFontSizes = {};
+
+        // Function to store initial font sizes
+        function storeInitialFontSizes() {
+            document.querySelectorAll('h1, h2, h3, p, span, body').forEach(element => {
+                initialFontSizes[element] = window.getComputedStyle(element).fontSize;
+            });
+        }
+
+        // Function to apply the scale factor
+        function applyScaleFactor(scaleFactor) {
+            document.querySelectorAll('h1, h2, h3, p, span, body').forEach(element => {
+                if (initialFontSizes[element]) {
+                    const initialSize = parseFloat(initialFontSizes[element]);
+                    const newSize = initialSize * scaleFactor;
+                    element.style.fontSize = `${newSize}px`;
+                }
+            });
+        }
+
+
+        // Call this function on page load
+        window.addEventListener('load', () => {
+            storeInitialFontSizes(); // Store the initial sizes
+
+            // Retrieve the scale factor from local storage
+            const storedScaleFactor = localStorage.getItem('scaleFactor');
+
+            if (storedScaleFactor) {
+                const scaleFactor = parseFloat(storedScaleFactor);
+                if (!isNaN(scaleFactor)) {
+                    applyScaleFactor(scaleFactor); // Apply the stored scale factor
+                } else {
+                    console.error('Invalid scale factor in local storage:', storedScaleFactor);
+                }
+            }
+        });
+
+        // Listen for messages from the iframe
+        window.addEventListener('message', (event) => {
+            // Log the received message for debugging
+            console.log('Message received from iframe:', event.data);
+
+            // Ensure the message is coming from the expected origin
+            if (event.origin !== window.location.origin) {
+                console.error('Invalid origin:', event.origin);
+                return;
+            }
+
+            const scaleFactor = parseFloat(event.data);
+
+            // Apply the scale factor to the parent document
+            if (!isNaN(scaleFactor)) {
+                applyScaleFactor(scaleFactor);
+            } else {
+                console.error('Invalid scale factor:', event.data);
+            }
+        });
     </script>
 
 </body>
