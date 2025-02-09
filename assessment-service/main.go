@@ -22,10 +22,10 @@ func main() {
 
 	// Configure CORS
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:8081"},         // Allow requests from this origin
-		AllowedMethods:   []string{"GET", "POST"},                   // Allow GET and POST methods
-		AllowedHeaders:   []string{"Authorization", "Content-Type"}, // Allow these headers
-		AllowCredentials: true,                                      // Allow credentials (e.g., cookies)
+		AllowedOrigins:   []string{"http://localhost:8081"},                   // Allow requests from this origin
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}, // Allow GET and POST methods
+		AllowedHeaders:   []string{"Authorization", "Content-Type"},           // Allow these headers
+		AllowCredentials: true,                                                // Allow credentials (e.g., cookies)
 	})
 
 	// Wrap the router with the CORS middleware
