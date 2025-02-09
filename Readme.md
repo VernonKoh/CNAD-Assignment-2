@@ -66,7 +66,7 @@ Below is the architecture diagram of the solution:
 - Install necessary dependencies such as Docker, Node.js, Go, etc.
 - Ensure the database is set up and running.
 - Install Pip for python service
-- ```sh
+```sh
 pip install opencv-python numpy mediapipe flask
 ```
 
