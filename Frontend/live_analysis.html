@@ -8,28 +8,83 @@
     <style>
         /* General Styling */
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
             margin: 0;
             padding: 20px;
-        }
-        h1, h2 {
             color: #343a40;
+            min-height: 100vh;
         }
+        h1, h2, h4 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-align: center;
+        }
+        h2 {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        h4 {
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+
+        /* Container Styling */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 30px;
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
         /* Buttons */
         button {
             background-color: #0d6efd;
             color: white;
             border: none;
-            padding: 10px 20px;
-            margin: 5px;
-            border-radius: 5px;
+            padding: 12px 24px;
+            margin: 10px 5px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            font-size: 1rem;
+            font-weight: 500;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         button:hover {
             background-color: #0b5ed7;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
         }
+        button:active {
+            transform: translateY(0);
+        }
+        #uploadFileBtn {
+            background-color: #ffc107;
+            color: #343a40;
+        }
+        #uploadFileBtn:hover {
+            background-color: #e0a800;
+        }
+        #redirectButton {
+            background-color: #dc3545;
+        }
+        #redirectButton:hover {
+            background-color: #c82333;
+        }
+        #webcamMode {
+            background-color: #28a745;
+        }
+        #webcamMode:hover {
+            background-color: #218838;
+        }
+
         /* Form Styling */
         form {
             margin: 20px 0;
@@ -37,74 +92,68 @@
         input[type="file"] {
             margin-bottom: 10px;
         }
-        /* Webcam Preview */
-        #webcamPreview {
+
+        /* Webcam Feed */
+        #webcamFeed {
             max-width: 100%;
             border: 2px solid #0d6efd;
-            border-radius: 5px;
+            border-radius: 10px;
             margin-top: 10px;
             display: none;
-        }
-        /* Image Display */
-        #capturedImage {
-            max-width: 100%;
-            height: auto;
-            border: 2px solid #0d6efd;
-            border-radius: 5px;
-            margin-top: 10px;
-            display: none;
-        }
-        /* Navbar Container */
-        #navbar-container {
-            margin-bottom: 20px;
-        }
-        /* Posture Analysis Results */
-        #analysisResults {
-            background-color: #e9ecef;
-            padding: 10px;
-            border-radius: 5px;
-            max-height: 200px;
-            overflow-y: auto;
-            font-size: 16px;
-            line-height: 1.5;
-        }
-        .analysis-item {
-            margin-bottom: 10px;
-        }
-        .analysis-item.warning {
-            color: #ffc107; /* Yellow for warnings */
-        }
-        .analysis-item.high-risk {
-            color: #dc3545; /* Red for high risk */
-        }
-        .analysis-item.success {
-            color: #198754; /* Green for success */
-        }
-        /* Hide Headers by Default */
-        #processedImageHeader, #postureAnalysisHeader, #liveWebcamHeader {
-            display: none;
-        }
-        /* Redirect Button */
-        #redirectButton {
-            background-color: #dc3545; /* Red for urgency */
-            margin-top: 20px;
         }
 
+        /* Loading Indicator */
+        #loadingIndicator {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
         .spinner {
             border: 5px solid rgba(0, 0, 0, 0.1);
-            border-left-color: #0d6efd; /* Blue */
+            border-left-color: #0d6efd;
             border-radius: 50%;
             width: 30px;
             height: 30px;
             animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
+        /* Clinics Section */
+        #clinicsSection {
+            display: none;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        /* Video Player Styling */
+        #videoPlayerContainer {
+            margin-top: 20px;
+            text-align: center;
+        }
+        #videoPlayer {
+            max-width: 100%;
+            border: 2px solid #0d6efd;
+            border-radius: 10px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
             }
-            100% {
-                transform: rotate(360deg);
+            h2 {
+                font-size: 1.5rem;
+            }
+            button {
+                width: 100%;
+                margin: 10px 0;
+            }
+            .container {
+                padding: 20px;
             }
         }
     </style>
@@ -112,31 +161,41 @@
 <body>
     <!-- Navbar Container -->
     <div id="navbar-container"></div>
-    <h1>Gait Analysis</h1>
+    <div class="container">
+        <h1>Gait Analysis</h1>
 
-    <button id="webcamMode">Allow Webcam access</button>
-    <!-- Video Upload Form -->
-    <form id="uploadForm" enctype="multipart/form-data">
-        <input type="file" name="file" id="file" accept="video/*" style="display: none;" required>
-        <button type="button" id="uploadFileBtn" style="background-color: #ffc107;">Upload Video</button>
-        <button type="submit" style="margin-top: 10px;">Submit</button>
-    </form>
+        <!-- Webcam Mode Button -->
+        <button id="webcamMode">Allow Webcam Access</button>
 
-    <!-- Redirect Button -->
-    <div id="clinicsSection" style="display: none; margin-top: 20px;">
-        <h4>Worried about your Gait? Find Nearby Clinics for proper analysis</h4>
-        <button id="redirectButton">Find Nearby Clinics</button>
+        <!-- Video Upload Form -->
+        <form id="uploadForm" enctype="multipart/form-data">
+            <input type="file" name="file" id="file" accept="video/*" style="display: none;" required>
+            <button type="button" id="uploadFileBtn">Upload Video</button>
+            <button type="submit">Submit</button>
+        </form>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator">
+            <p>Uploading and processing video... Please wait.</p>
+            <div class="spinner"></div>
+        </div>
+
+        <!-- Video Player Container -->
+        <div id="videoPlayerContainer">
+            <!-- Processed video will be displayed here -->
+        </div>
+
+        <!-- Clinics Section -->
+        <div id="clinicsSection">
+            <h4>Worried about your Gait? Find Nearby Clinics for proper analysis</h4>
+            <button id="redirectButton">Find Nearby Clinics</button>
+        </div>
+
+        <!-- Live Webcam Section -->
+        <h2 id="liveWebcamHeader">Live Webcam:</h2>
+        <img id="webcamFeed" src="" style="max-width: 100%; border: 2px solid black; display: none;" />
     </div>
 
-    <div id="loadingIndicator" style="display: none;">
-        <p>Uploading and processing video... Please wait.</p>
-        <div class="spinner"></div> <!-- You'll need to define CSS for .spinner -->
-      </div>
-
-    <!-- Live Webcam Section -->
-    <h2 id="liveWebcamHeader">Live Webcam:</h2>
-    <img id="webcamFeed" src="" style="max-width: 100%; border: 2px solid black; display: none;" />
-    
     <iframe id="fontWidget" src="font_widget.html" style="position: fixed; bottom: 20px; right: 20px; border: none;"></iframe>
 
     <script>
@@ -161,6 +220,7 @@
             document.getElementById('file').click();
         });
 
+        // Handle form submission
         document.getElementById('uploadForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData();
@@ -188,39 +248,37 @@
                 const data = await response.json();
 
                 if (data && data.download_url) {
-                    //alert("Video Processing Complete! Click OK to download.");
-                    //window.location.href = data.download_url; // Redirect to download the processed video
-
                     // Hide loading indicator
                     document.getElementById('loadingIndicator').style.display = "none";
 
-                    // Display processed video on the frontend
-                    const videoPlayer = document.createElement('video');
-                    videoPlayer.src = data.download_url;
-                    videoPlayer.controls = true; // Add controls like play, pause, etc.
-                    videoPlayer.width = 640; // Set desired width
-                    videoPlayer.height = 480; // Set desired height
-                    document.body.appendChild(videoPlayer);
+                    // Display processed video inside the container
+                    const videoPlayerContainer = document.getElementById('videoPlayerContainer');
+                    videoPlayerContainer.innerHTML = `
+                        <video id="videoPlayer" controls>
+                            <source src="${data.download_url}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    `;
 
-            // Make Clinic Button Available
-            document.getElementById('clinicsSection').style.display = "block";
+                    // Make Clinic Button Available
+                    document.getElementById('clinicsSection').style.display = "block";
+                } else {
+                    alert("Error: Invalid response from server. Please try again later.");
+                }
+            } catch (error) {
+                console.error('Error uploading video:', error);
+                alert("Failed to upload video. Please try again later.");
+            } finally {
+                // Hide loading indicator (ensure it's hidden even if an error occurs)
+                document.getElementById('loadingIndicator').style.display = "none";
+            }
+        });
 
-        } else {
-            alert("Error: Invalid response from server. Please try again later.");
-        }
-    } catch (error) {
-        console.error('Error uploading video:', error);
-        alert("Failed to upload video. Please try again later.");
-    } finally {
-        // Hide loading indicator (ensure it's hidden even if an error occurs)
-        document.getElementById('loadingIndicator').style.display = "none";
-    }
-});
-
-document.getElementById('redirectButton').addEventListener('click', () => {
-            // Redirect to the clinics page
+        // Redirect to clinics page
+        document.getElementById('redirectButton').addEventListener('click', () => {
             window.location.href = "clinics.html";
         });
+
         // Handle webcam access
         document.getElementById('webcamMode').addEventListener('click', () => {
             document.getElementById('webcamFeed').src = "http://127.0.0.1:5000/webcam";
@@ -248,7 +306,6 @@ document.getElementById('redirectButton').addEventListener('click', () => {
                 }
             });
         }
-
 
         // Call this function on page load
         window.addEventListener('load', () => {
