@@ -45,6 +45,8 @@
 
 
         <button id="create-assessment-btn">Create Assessment</button>
+        <iframe id="fontWidget" src="font_widget.html" style="position: fixed; bottom: 20px; right: 20px; border: none;"></iframe>
+
         <!-- Add the Return Home button initially hidden -->
         <button id="return-home-btn" style="display: none;">Return Home</button>
 
@@ -336,7 +338,8 @@ function createQuestion(question) {
             if (question) {
                 question.question_text = text;
             }
-        }
+        });
+
     </script>
 </body>
 
