@@ -26,8 +26,10 @@ CREATE TABLE IF NOT EXISTS users (
     is_verified BOOLEAN DEFAULT FALSE,
     verification_token VARCHAR(255),
     facial_id VARCHAR(255) NULL,
+    high_risk BOOLEAN DEFAULT FALSE,  -- New column added
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
 
 -- Step 9: Create user_details table if it doesn't exist
 CREATE TABLE IF NOT EXISTS user_details (
