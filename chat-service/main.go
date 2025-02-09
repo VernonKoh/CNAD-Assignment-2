@@ -26,7 +26,7 @@ type ChatbotResponse struct {
 }
 
 // Hardcoded API Key (⚠️ Temporary solution)
-var openRouterAPIKey = "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"
+var openRouterAPIKey = "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"
 
 func chatHandler(w http.ResponseWriter, r *http.Request) {
 	var req ChatRequest
@@ -38,21 +38,16 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Println("📥 Received message from user:", req.Message)
-
-	// 🚨 Debug: Print API Key Before Sending Request
-	fmt.Println("🔑 Sending API Key:", openRouterAPIKey) // <-- ADD THIS
+	fmt.Println("🔑 Using API Key:", openRouterAPIKey) // Debug API Key
 
 	client := resty.New()
-
 	resp, err := client.R().
-		SetHeader("Authorization", "Bearer "+openRouterAPIKey). // ✅ Verify API key is correct
+		SetHeader("Authorization", "Bearer "+openRouterAPIKey).
 		SetHeader("Content-Type", "application/json").
-		SetHeader("HTTP-Referer", "http://localhost:8081").
-		SetHeader("X-Title", "Lion Befrienders Chatbot").
+		SetHeader("Accept", "application/json").
 		SetBody(map[string]interface{}{
-			"model": "google/gemini-2.0-flash-001",
+			"model": "deepseek/deepseek-chat",
 			"messages": []map[string]string{
-				{"role": "system", "content": "You are LionBee, a chatbot designed to help elderly users with fall-risk self-assessments."},
 				{"role": "user", "content": req.Message},
 			},
 		}).
@@ -64,7 +59,14 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("📩 Raw API Response:", string(resp.Body())) // ✅ Print full API response
+	// 🚨 Print full API response
+	fmt.Println("📩 Raw API Response:", string(resp.Body()))
+	fmt.Println("API Status Code:", resp.StatusCode())
+
+	if resp.StatusCode() != 200 {
+		http.Error(w, fmt.Sprintf("API error: %d", resp.StatusCode()), http.StatusInternalServerError)
+		return
+	}
 
 	var chatbotResponse ChatbotResponse
 	err = json.Unmarshal(resp.Body(), &chatbotResponse)
@@ -102,6 +104,10 @@ func enableCORS(next http.Handler) http.Handler {
 
 func main() {
 	router := mux.NewRouter()
+
+	// Register the handler for the /chat route
+	router.HandleFunc("/chat", chatHandler).Methods("POST")
+
 	routes.SetupRoutes(router)
 
 	// Apply CORS middleware

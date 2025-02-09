@@ -1828,7 +1828,7 @@ if (userName !== "unknown-user" && jwtToken) {
                 const response = await fetch('http://localhost:8084/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' ,
-                                "Authorization": "Bearer YOUR-API-KEY" // 🔥 ADD THIS FOR DEBUGGING
+                                "Authorization": "Bearer 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" // 🔥 ADD THIS FOR DEBUGGING
                     },
                     body: JSON.stringify({ message: userInput })
                 });
