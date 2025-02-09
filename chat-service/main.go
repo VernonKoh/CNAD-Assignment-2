@@ -26,7 +26,7 @@ type ChatbotResponse struct {
 }
 
 // Hardcoded API Key (⚠️ Temporary solution)
-var openRouterAPIKey = "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"
+var openRouterAPIKey = "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"
 
 func chatHandler(w http.ResponseWriter, r *http.Request) {
 	var req ChatRequest
