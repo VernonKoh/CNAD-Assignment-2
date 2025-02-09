@@ -81,7 +81,7 @@
             color: #198754; /* Green for success */
         }
         /* Hide Headers by Default */
-        #processedImageHeader, #postureAnalysisHeader, #liveWebcamHeader {
+        #processedImageHeader, #postureAnalysisHeader {
             display: none;
         }
         /* Redirect Button */
@@ -96,9 +96,11 @@
     <!-- Navbar Container -->
     <div id="navbar-container"></div>
     <h1>Posture Analysis</h1>
+
     <!-- Buttons to switch between Image Upload and Webcam -->
     <button id="uploadMode">Upload Image</button>
-    <button id="webcamMode">Live Webcam</button>
+    <button id="webcamMode" onclick="window.location.href='live_webcam.html'">Live Webcam</button>
+
     <!-- Combined Upload/Take Picture Form -->
     <form id="uploadForm" enctype="multipart/form-data">
         <div style="margin-top: 10px;">
@@ -122,10 +124,6 @@
     <!-- Processed Image Section -->
     <h2 id="processedImageHeader">Processed Image:</h2>
     <img id="processedImage" style="max-width: 100%; border: 2px solid black; display: none;" />
-
-    <!-- Live Webcam Section -->
-    <h2 id="liveWebcamHeader">Live Webcam:</h2>
-    <img id="webcamFeed" src="" style="max-width: 100%; border: 2px solid black; display: none;" />
 
     <script>
         let videoStream;
@@ -152,9 +150,6 @@
                 processedImage.src = `${data.image_url}?${Date.now()}`;
                 processedImage.style.display = "block";
                 document.getElementById('processedImageHeader').style.display = "block"; // Show header
-
-                // Hide webcam feed
-                document.getElementById('webcamFeed').style.display = "none";
 
                 // Display posture analysis results
                 displayAnalysisResults(data.analysis);
@@ -210,26 +205,6 @@
         // Redirect to clinics.html when the button is clicked
         document.getElementById('redirectButton').addEventListener('click', () => {
             window.location.href = "clinics.html";
-        });
-
-        // Toggle between Image Upload and Webcam Mode
-        document.getElementById('uploadMode').addEventListener('click', () => {
-            document.getElementById('uploadForm').style.display = "block";
-            document.getElementById('processedImage').style.display = "none";
-            document.getElementById('processedImageHeader').style.display = "none"; // Hide header
-            document.getElementById('postureAnalysisHeader').style.display = "none"; // Hide header
-            document.getElementById('webcamFeed').style.display = "none";
-            document.getElementById('liveWebcamHeader').style.display = "none"; // Hide header
-        });
-
-        document.getElementById('webcamMode').addEventListener('click', () => {
-            document.getElementById('uploadForm').style.display = "none";
-            document.getElementById('processedImage').style.display = "none";
-            document.getElementById('processedImageHeader').style.display = "none"; // Hide header
-            document.getElementById('postureAnalysisHeader').style.display = "none"; // Hide header
-            document.getElementById('webcamFeed').src = "http://127.0.0.1:5000/webcam";
-            document.getElementById('webcamFeed').style.display = "block";
-            document.getElementById('liveWebcamHeader').style.display = "block"; // Show header
         });
 
         // Dynamically load the navbar
