@@ -139,7 +139,7 @@ Step 2: Access the Application
 Website: http://localhost:8081
 API Endpoint: http://localhost:8081/api
 
-5. System Requirements
+## 5. System Requirements
 To run the Fall Risk Self-Assessment Microservices Architecture system smoothly, make sure your environment meets the following requirements:
 
 **Hardware:**
@@ -163,7 +163,7 @@ Install using:
 pip install opencv-python numpy mediapipe flask
 ```
 
-**6. Known Issues and Limitations**
+## 6. Known Issues and Limitations
 There are a few known issues and limitations in the system:
 
 **1. FaceIO Public ID**
