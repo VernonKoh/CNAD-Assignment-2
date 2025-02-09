@@ -112,14 +112,18 @@ Run dependency management:
 
 ```sh
 go mod tidy
-
+```
 Run User Service and Game Service via Docker:
+```sh
 docker-compose build && docker-compose up
+```
 
 Start other services manually in separate terminal windows:
+```sh
 go run assessment-service/main.go
 go run chat-service/main.go
 python mediapipe_server.py
+```
 
 Step 2: Access the Application
 
@@ -138,5 +142,5 @@ Flexibility and Maintainability:
 Independent Development: Teams can work on different services simultaneously.
 Faster Deployments: Updates to one service do not require changes to others.
 
-###Conclusion
+### Conclusion
 This microservices-based Fall Risk Self-Assessment System ensures a scalable, resilient, and modular solution. By leveraging RESTful APIs, independent databases, and containerized deployments, this architecture enhances flexibility, maintainability, and long-term system performance.
