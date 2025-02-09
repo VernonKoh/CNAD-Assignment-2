@@ -65,6 +65,10 @@ Below is the architecture diagram of the solution:
 
 - Install necessary dependencies such as Docker, Node.js, Go, etc.
 - Ensure the database is set up and running.
+- Install Pip for python service
+- ```sh
+pip install opencv-python numpy mediapipe flask
+```
 
 ### 3.2 Installation Steps
 
@@ -81,6 +85,7 @@ Below is the architecture diagram of the solution:
      ```sh
      go run assessment-service/main.go
      go run chat-service/main.go
+     py mediapipe_server.py
      ```
 5. Access the application:
    - Website: `http://localhost:8081`
