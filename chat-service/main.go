@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/exec"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/gorilla/mux"
@@ -102,7 +104,7 @@ func enableCORS(next http.Handler) http.Handler {
 	})
 }
 
-func main() {
+func startChatbot() {
 	router := mux.NewRouter()
 
 	// Register the handler for the /chat route
@@ -114,6 +116,27 @@ func main() {
 	handler := enableCORS(router)
 
 	port := "8084"
-	fmt.Println("Chatbot microservice running on http://localhost:" + port)
+	fmt.Println("🗨️ Chatbot microservice running on http://localhost:" + port)
 	log.Fatal(http.ListenAndServe(":"+port, handler))
+}
+
+func startVoiceRecognition() {
+	fmt.Println("🎤 Starting voice recognition...")
+
+	cmd := exec.Command("python", "record_audio.py")
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	err := cmd.Run()
+
+	if err != nil {
+		fmt.Println("❌ Error running microphone recording:", err)
+	} else {
+		fmt.Println("✅ Microphone recording ran successfully")
+	}
+}
+
+func main() {
+	// ✅ Run Chatbot API & Voice Recognition in Parallel
+	go startChatbot()       // 🔹 Runs chatbot in a separate goroutine
+	startVoiceRecognition() // 🔹 Runs voice recording in the main goroutine
 }

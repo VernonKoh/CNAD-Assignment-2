@@ -45,6 +45,11 @@
 
 
         <button id="create-assessment-btn">Create Assessment</button>
+        <iframe id="fontWidget" src="font_widget.html" style="position: fixed; bottom: 20px; right: 20px; border: none;"></iframe>
+
+        <!-- Add the Return Home button initially hidden -->
+        <button id="return-home-btn" style="display: none;">Return Home</button>
+
     </div>
 
     <script>
@@ -156,18 +161,16 @@
             });
         });
         document.getElementById("create-assessment-btn").addEventListener("click", async function () {
-            const button = this; // Reference to the button
+    const button = this; // Reference to the button
 
     if (!assessmentData.name || !assessmentData.description) {
         alert("Please provide a name and description for the assessment.");
         return;
     }
-        // Disable the button to prevent multiple clicks
-        button.disabled = true;
-        button.textContent = "Creating...";
+    // Disable the button to prevent multiple clicks
+    button.disabled = true;
+    button.textContent = "Creating...";
 
-    
-    
     console.log("Creating assessment with data:", {
         name: assessmentData.name,
         description: assessmentData.description
@@ -206,17 +209,23 @@
             }
 
             alert("Assessment, questions, and options created successfully!");
-              // Change the button to "Return Home"
-              button.textContent = "Return Home";
-            button.disabled = false; // Enable button again
-            button.addEventListener("click", function () {
+
+            // Hide the Create Assessment button
+            button.style.display = "none";
+
+            // Show the Return Home button
+            const returnHomeBtn = document.getElementById("return-home-btn");
+            returnHomeBtn.style.display = "inline-block";
+
+            // Add event listener for the Return Home button
+            returnHomeBtn.addEventListener("click", function () {
                 window.location.href = "http://localhost:8080/manage_assessments.html";
             });
         } else {
             alert("Failed to create assessment. Please try again.");
             button.disabled = false;
             button.textContent = "Create Assessment"; // Reset button in case of failure
-                }
+        }
     } catch (error) {
         console.error("Error creating assessment:", error);
         alert("An error occurred while creating the assessment.");
@@ -329,7 +338,8 @@ function createQuestion(question) {
             if (question) {
                 question.question_text = text;
             }
-        }
+        });
+
     </script>
 </body>
 

@@ -171,14 +171,17 @@
         <div id="errorMessage" class="error-message"></div>
     </div>
 
+    <iframe id="fontWidget" src="font_widget.html" style="position: fixed; bottom: 20px; right: 20px; border: none;"></iframe>
+
+
     <script>
         let assessmentId;
-
+    
         function getQuizIdFromURL() {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get('quizId');
         }
-
+    
         async function loadQuiz() {
             assessmentId = getQuizIdFromURL();
             if (!assessmentId) {
@@ -186,18 +189,18 @@
                 window.location.href = "selectassessment.html";
                 return;
             }
-
+    
             try {
                 const response = await fetch(`http://localhost:8081/api/v1/users/questions/${assessmentId}`);
                 const questions = await response.json();
                 const quizContainer = document.getElementById("quiz-container");
-
+    
                 quizContainer.innerHTML = "";
                 questions.forEach((question, index) => {
                     const questionDiv = document.createElement("div");
                     questionDiv.classList.add("question-container");
                     questionDiv.dataset.index = index;
-
+    
                     let optionsHTML = "";
                     question.options.forEach(option => {
                         optionsHTML += `
@@ -206,35 +209,35 @@
                                 ${option.option_text}
                             </label>`;
                     });
-
+    
                     questionDiv.innerHTML = `
                         <p>${index + 1}. ${question.question_text}</p>
                         <div class="options">${optionsHTML}</div>`;
-
+    
                     quizContainer.appendChild(questionDiv);
                     questionDiv.addEventListener("change", checkAllQuestionsAnswered);
                 });
-
+    
                 checkAllQuestionsAnswered();
-
+    
             } catch (error) {
                 console.error("Error loading quiz:", error);
                 document.getElementById("errorMessage").innerText = "Error loading quiz. Please try again later.";
             }
         }
-
+    
         function checkAllQuestionsAnswered() {
             const allAnswered = [...document.querySelectorAll('.question-container')].every((questionDiv) => {
                 return questionDiv.querySelector('input[type="radio"]:checked') !== null;
             });
             document.getElementById("submit-btn").disabled = !allAnswered;
         }
-
+    
         async function submitQuiz() {
             let totalRiskScore = 0;
             let selectedOptions = [];
             const questions = document.querySelectorAll(".question-container");
-
+    
             questions.forEach((question, index) => {
                 const selectedOption = document.querySelector(`input[name="question${index}"]:checked`);
                 if (selectedOption) {
@@ -242,7 +245,7 @@
                     selectedOptions.push(parseInt(selectedOption.dataset.optionId));
                 }
             });
-
+    
             const userID = localStorage.getItem('userID');
             const payload = {
                 assessment_id: parseInt(assessmentId),
@@ -250,20 +253,27 @@
                 total_risk: totalRiskScore,
                 option_ids: selectedOptions
             };
-
+    
+            console.log("Submitting quiz with the following payload:");
+            console.log(payload); // Log the payload to see what you're sending
+    
             try {
                 const response = await fetch("http://localhost:8081/api/v1/users/submit-assessment", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(payload)
                 });
-
+                const responseBody = await response.text();
+                console.log("Response Body:", responseBody);
+                    
+                console.log("Response from server:", response); // Log the server response
+    
                 if (response.ok) {
                     let riskMessage = totalRiskScore > 10 ? "Risk Score: High, Please visit a doctor" : "Risk Score: Low";
                     document.getElementById("result").innerText = `Assessment Submitted! Risk Score: ${totalRiskScore} (${riskMessage})`;
                     document.getElementById("submit-btn").style.display = "none";
                     document.getElementById("home-btn").style.display = "block";
-
+    
                     // Show "Go to Clinics" button if risk score is high
                     if (totalRiskScore > 10) {
                         document.getElementById("clinic-btn").style.display = "block";
@@ -277,7 +287,7 @@
                 document.getElementById("result").innerText = "Error connecting to server.";
             }
         }
-
+    
         async function updateHighRiskStatus(userID) {
             try {
                 const response = await fetch("http://localhost:8081/api/v1/users/update-high-risk", {
@@ -294,9 +304,9 @@
                 console.error("Error updating high-risk status:", error);
             }
         }
-
+    
         loadQuiz();
-
+    
         async function loadNavbar() {
             try {
                 const response = await fetch('navbar.html');
@@ -310,10 +320,72 @@
                 console.error('Failed to load navbar:', error);
             }
         }
-
+    
         loadNavbar();  // Load navbar dynamically
 
+
+        // Store the initial font sizes of all elements
+        const initialFontSizes = {};
+
+        // Function to store initial font sizes
+        function storeInitialFontSizes() {
+            document.querySelectorAll('h1, h2, h3, p, span, body').forEach(element => {
+                initialFontSizes[element] = window.getComputedStyle(element).fontSize;
+            });
+        }
+
+        // Function to apply the scale factor
+        function applyScaleFactor(scaleFactor) {
+            document.querySelectorAll('h1, h2, h3, p, span, body').forEach(element => {
+                if (initialFontSizes[element]) {
+                    const initialSize = parseFloat(initialFontSizes[element]);
+                    const newSize = initialSize * scaleFactor;
+                    element.style.fontSize = `${newSize}px`;
+                }
+            });
+        }
+
+
+        // Call this function on page load
+        window.addEventListener('load', () => {
+            storeInitialFontSizes(); // Store the initial sizes
+
+            // Retrieve the scale factor from local storage
+            const storedScaleFactor = localStorage.getItem('scaleFactor');
+
+            if (storedScaleFactor) {
+                const scaleFactor = parseFloat(storedScaleFactor);
+                if (!isNaN(scaleFactor)) {
+                    applyScaleFactor(scaleFactor); // Apply the stored scale factor
+                } else {
+                    console.error('Invalid scale factor in local storage:', storedScaleFactor);
+                }
+            }
+        });
+
+        // Listen for messages from the iframe
+        window.addEventListener('message', (event) => {
+            // Log the received message for debugging
+            console.log('Message received from iframe:', event.data);
+
+            // Ensure the message is coming from the expected origin
+            if (event.origin !== window.location.origin) {
+                console.error('Invalid origin:', event.origin);
+                return;
+            }
+
+            const scaleFactor = parseFloat(event.data);
+
+            // Apply the scale factor to the parent document
+            if (!isNaN(scaleFactor)) {
+                applyScaleFactor(scaleFactor);
+            } else {
+                console.error('Invalid scale factor:', event.data);
+            }
+        });
+
     </script>
+    
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
