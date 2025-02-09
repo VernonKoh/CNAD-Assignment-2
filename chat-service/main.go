@@ -26,51 +26,60 @@ type ChatbotResponse struct {
 }
 
 // Hardcoded API Key (⚠️ Temporary solution)
-var openRouterAPIKey = "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"
+var openRouterAPIKey = "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"
 
 func chatHandler(w http.ResponseWriter, r *http.Request) {
 	var req ChatRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
+		fmt.Println("❌ Failed to parse request:", err)
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
 
+	fmt.Println("📥 Received message from user:", req.Message)
+
+	// 🚨 Debug: Print API Key Before Sending Request
+	fmt.Println("🔑 Sending API Key:", openRouterAPIKey) // <-- ADD THIS
+
 	client := resty.New()
+
 	resp, err := client.R().
-		SetHeader("Authorization", "Bearer "+openRouterAPIKey). // ✅ Use API key
+		SetHeader("Authorization", "Bearer "+openRouterAPIKey). // ✅ Verify API key is correct
 		SetHeader("Content-Type", "application/json").
-		SetHeader("HTTP-Referer", "http://localhost:8081"). // ✅ Correct for local testing
+		SetHeader("HTTP-Referer", "http://localhost:8081").
 		SetHeader("X-Title", "Lion Befrienders Chatbot").
 		SetBody(map[string]interface{}{
 			"model": "google/gemini-2.0-flash-001",
 			"messages": []map[string]string{
-				{"role": "system", "content": "You are LionBee, a friendly and patient chatbot designed to help elderly users perform a fall-risk self-assessment from home. Your goal is to provide clear, concise, and reassuring guidance while making the process as easy as possible. Keep instructions simple and step-by-step, avoiding medical jargon. If a user's responses indicate a high fall risk, gently suggest they seek medical advice or assistance. Prioritize empathy and clarity in all responses." +
-					"When emphasizing important words or phrases, do NOT use Markdown formatting (such as # for headings or ** for bold). Instead, naturally highlight key terms by writing them in clear, readable sentences. For example, instead of **Important**, say: 'This is important: [text]'. Avoid using special characters that might confuse elderly users. Strictly no asterix involved."},
+				{"role": "system", "content": "You are LionBee, a chatbot designed to help elderly users with fall-risk self-assessments."},
 				{"role": "user", "content": req.Message},
 			},
 		}).
-		Post("https://openrouter.ai/api/v1/chat/completions") // ✅ Correct API endpoint
+		Post("https://openrouter.ai/api/v1/chat/completions")
 
 	if err != nil {
+		fmt.Println("❌ Error sending request to OpenRouter:", err)
 		http.Error(w, "Error communicating with OpenRouter API", http.StatusInternalServerError)
 		return
 	}
 
+	fmt.Println("📩 Raw API Response:", string(resp.Body())) // ✅ Print full API response
+
 	var chatbotResponse ChatbotResponse
 	err = json.Unmarshal(resp.Body(), &chatbotResponse)
 	if err != nil {
+		fmt.Println("❌ Failed to parse API response:", err)
 		http.Error(w, "Error parsing chatbot response", http.StatusInternalServerError)
 		return
 	}
 
-	// Ensure chatbot response is not empty
 	if len(chatbotResponse.Choices) == 0 || chatbotResponse.Choices[0].Message.Content == "" {
+		fmt.Println("⚠️ API returned empty response")
 		http.Error(w, "Chatbot returned an empty response", http.StatusInternalServerError)
 		return
 	}
 
-	// Send chatbot response back to frontend
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(chatbotResponse)
 }
