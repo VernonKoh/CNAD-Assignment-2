@@ -16,6 +16,9 @@
     <title>Welcome</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+       <!-- ✅ Showdown.js for Markdown Conversion -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
     <iframe id="fontWidget" src="font_widget.html" style="position: fixed; bottom: 20px; right: 20px; border: none;"></iframe>
     <style>
 
@@ -709,7 +712,7 @@
     }
 
 
-/* DeepSeek-style Background */
+/* Background */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
 
     /* ✅ Restore Clean Background */
@@ -718,7 +721,7 @@
         font-family: 'Inter', sans-serif;
     }
 
-    /* ✅ Chatbox with DeepSeek Style */
+    /* ✅ Chatbox with Style */
     .chat-container {
         max-width: 550px;
         margin: 50px auto;
@@ -774,7 +777,7 @@
         border-radius: 12px 12px 0 12px;
     }
 
-    /* ✅ DeepSeek Bot Message */
+    /* ✅ Bot Message */
     .bot {
         background: #f7f7f8;
         color: black;
@@ -850,12 +853,6 @@
     padding: 10px;
 }
 
-/* ✅ Chat Input */
-.chat-input {
-    display: flex;
-    padding: 10px;
-    border-top: 1px solid #ddd;
-}
 
 /* ✅ Send Button */
 .send-btn {
@@ -889,7 +886,12 @@
 
 
     </style>
+
+ 
 </head>
+
+
+
 <body>
     
     <!-- Navbar Container -->
@@ -922,6 +924,10 @@
             </div>
         </div>
         <button class="close-btn" onclick="closeChat()">✖</button>
+        <button class="expand-btn" onclick="toggleExpand()">
+            <i class="fas fa-expand"></i> <!-- Expand icon -->
+        </button>
+        
     </div>
 
     <div class="chat-body">
@@ -929,16 +935,32 @@
     </div>
 
     <div class="chat-input">
+        <!-- ✅ Language Selection -->
+        <select id="languageSelector">
+            <option value="en-US">EN</option>
+            <option value="zh-CN">中文</option>
+            <option value="ms-MY">Malay</option>
+        <option value="ta-IN">தமிழ்</option>
+        </select>
+        <!-- ✅ Voice Button -->
+        <button class="voice-btn" onclick="startVoiceRecognition()">
+            <i class="fas fa-microphone"></i>
+        </button>
+    
+        <!-- ✅ Input Field -->
         <input type="text" id="userMessage" placeholder="Type a message..." onkeypress="handleKeyPress(event)">
+    
+        <!-- ✅ Send Button -->
         <button class="send-btn" onclick="sendMessage()">➤</button>
     </div>
+    
 </div>
 
 
 
 
 <style>
-    /* ✅ DeepSeek Header Styling */
+    /* ✅ Header Styling */
     .chat-header {
     text-align: center;
     padding: 20px;
@@ -1001,6 +1023,47 @@ body {
     border-radius: 25px;
 }
 
+.expand-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.expand-btn:hover {
+    color: #ddd; /* Light gray on hover */
+}
+
+/* ✅ Smooth transition to prevent instant jumps */
+#chatPopup {
+    transition: all 0.3s ease-in-out;
+    max-width: 90vw; /* Prevents it from getting too big */
+    max-height: 90vh; /* Prevents it from covering the whole screen */
+}
+
+/* ✅ Expanded chat style */
+#chatPopup.expanded {
+    width: 800px !important;
+    height: 900px !important;
+}
+
+/* ✅ Ensure input field & chat area resize correctly */
+.chat-body {
+    flex-grow: 1; 
+    overflow-y: auto; 
+    transition: all 0.3s ease-in-out;
+}
+
+/* ✅ Prevent input field from getting squeezed */
+.chat-input {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Prevents input from shrinking */
+    padding: 12px;
+}
+
 /* ✅ Fix Chat Header Content */
 .chat-header-content {
     display: flex;
@@ -1021,71 +1084,41 @@ body {
     color: white; /* ✅ FIXED */
 }
 
-/* ✅ Chat Body - Adjust for Bigger Size */
+/* ✅ Ensure Chat Body Covers Full Width */
 .chat-body {
-    height: 400px;
+    height: 350px;
     overflow-y: auto;
-    padding: 10px;
-    background: #F8F8F8; /* Light grey */
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* Default alignment */
 }
-
-/* ✅ Chat Input - Improve Look */
+/* ✅ Fix Chat Input Layout */
 .chat-input {
     display: flex;
+    align-items: center;
     padding: 10px;
     background: white;
     border-top: 1px solid #ddd;
+    width: 100%;
+    justify-content: space-between; /* Distributes space */
+    font-family: 'Inter', sans-serif;
+    position:relative;
+    flex-shrink: 0;
+    height: 60px;
 }
 
-/* ✅ Input Field */
-.chat-input input {
-    flex-grow: 1;
-    padding: 12px;
-    border: none;
-    border-radius: 20px;
-    background: #F1F1F1;
+/* ✅ Language Dropdown */
+#languageSelector {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
     font-size: 14px;
+    margin-right: 8px; /* Add spacing */
 }
 
-/* ✅ Fix User Messages on the Right */
-.user-message {
-    background: #E5E5EA;
-    color: black;
-    padding: 10px;
-    border-radius: 15px;
-    margin: 8px;
-    max-width: 80%;
-    align-self: flex-end;
-    text-align: right;
-    display: inline-block;
-    font-family: 'Inter', sans-serif;
-}
-
-/* ✅ Fix Bot Messages on the Left */
-.bot-message {
-    background: #FFF3F3;
-    color: black;
-    padding: 10px;
-    border-radius: 15px;
-    margin: 8px;
-    max-width: 80%;
-    align-self: flex-start;
-    text-align: left;
-    display: inline-block;
-    font-family: 'Inter', sans-serif;
-}
-
-/* ✅ Fix Close Button */
-.close-btn {
-    background: none;
-    border: none;
-    font-size: 16px;
-    color: rgb(0, 0, 0);
-    cursor: pointer;
-}
-
-/* ✅ Send Button - Make Round */
-.send-btn {
+/* ✅ Voice Button (Mic) */
+.voice-btn {
     background: #8B0000;
     border: none;
     color: white;
@@ -1097,8 +1130,83 @@ body {
     justify-content: center;
     font-size: 18px;
     cursor: pointer;
-    margin-left: 5px;
+    margin-right: 8px; /* Prevents squeezing */
 }
+
+/* ✅ Input Field - Auto Adjust Width */
+.chat-input input {
+    flex-grow: 1; /* Allows input to take remaining space */
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    background: #F1F1F1;
+    font-size: 12px;
+    margin-right: 8px;
+}
+
+/* ✅ Send Button - Keep Round & Separate */
+.send-btn {
+    background: #8B0000;
+    border: none;
+    color: white;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+
+
+/* ✅ Improve Bot Message Styling */
+.bot-message {
+    background: #FFF3F3;
+    color: black;
+    padding: 12px 15px; /* ✅ Add spacing */
+    border-radius: 15px;
+    margin: 8px;
+    max-width: 85%; /* ✅ Keep consistent width */
+    align-self: flex-start;
+    text-align: left;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    line-height: 1.6; /* ✅ Improve readability */
+    word-wrap: break-word;
+    white-space: pre-line; /* ✅ Preserve new lines */
+    border: 1px solid #ddd;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1); /* ✅ Adds depth */
+}
+
+/* ✅ Improve User Message Styling */
+.user-message {
+    background: #E5E5EA;
+    color: black;
+    padding: 12px 15px;
+    border-radius: 15px;
+    margin: 8px;
+    max-width: 85%;
+    align-self: flex-end;
+    text-align: left;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    word-wrap: break-word;
+    white-space: pre-line;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2); /* ✅ Adds depth */
+}
+
+/* ✅ Fix Close Button */
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 16px;
+    color: rgb(0, 0, 0);
+    cursor: pointer;
+}
+
 
 
 
@@ -1252,14 +1360,30 @@ body {
     </div>
     
     <!-- Input Box Like OpenAI -->
-    <div class="input-container">
-        <input type="text" id="userInput" placeholder="Type a message..." />
-        <button id="sendBtn" class="send-btn"><i class="fas fa-arrow-up"></i></button>
+    <div class="chat-input">
+        <!-- ✅ Language Dropdown (Aligned Left) -->
+        <select id="languageSelector">
+            <option value="en-US">English</option>
+            <option value="zh-CN">中文 (Chinese)</option>
+        </select>
+    
+        <!-- ✅ Voice Button (Mic) -->
+        <button class="voice-btn" onclick="startVoiceRecognition()">
+            <i class="fas fa-microphone"></i>
+        </button>
+    
+        <!-- ✅ Input Field -->
+        <input type="text" id="userMessage" placeholder="Type a message..." onkeypress="handleKeyPress(event)">
+    
+        <!-- ✅ Send Button -->
+        <button class="send-btn" onclick="sendMessage()">➤</button>
     </div>
+    
+    
 </section>
 
 
-<!-- ✅ DeepSeek Styling Fix -->
+<!-- ✅ Styling Fix -->
 <style>
     /* Restore Chatbox */
     .chat-container {
@@ -1284,7 +1408,7 @@ body {
         border: 1px solid #ddd;
     }
 
-    /* ✅ DeepSeek Chat Bubble Fix */
+    /* ✅ Chat Bubble Fix */
     .message {
         max-width: 80%;
         padding: 12px;
@@ -1341,6 +1465,9 @@ body {
 
 <!-- Scripts -->
 <script src="https://cdn.faceio.net/fio.js"></script>
+
+    
+
 <script>
     loadNavbar(); // Load navbar dynamically
 
@@ -1747,22 +1874,45 @@ function handleKeyPress(event) {
         sendMessage();
     }
 }
+    // ✅ Global Variable
+    var markdownConverter;
 
-// ✅ Send a Message
+    // ✅ Ensure Showdown is loaded before using
+document.addEventListener("DOMContentLoaded", function () {
+    if (typeof showdown !== "undefined") {
+        console.log("✅ Showdown.js Loaded Successfully!");
+        window.markdownConverter = new showdown.Converter();
+    } else {
+        console.error("❌ Showdown.js failed to load.");
+    }
+});
+
+// ✅ Fix formatBotResponse function
+function formatBotResponse(response) {
+    if (!markdownConverter) {
+        console.warn("⚠️ markdownConverter is not initialized yet.");
+        return response; // Return raw response instead of breaking
+    }
+
+    try {
+        return markdownConverter.makeHtml(response);
+    } catch (error) {
+        console.error("❌ Markdown conversion error:", error);
+        return response; // Fallback to raw response
+    }
+}
+
+
+// ✅ Ensure Chat Messages Display Correctly
 function sendMessage() {
     const userMessage = document.getElementById("userMessage").value.trim();
-    if (userMessage === "") return;
+    if (!userMessage) return;
 
     let chatBody = document.querySelector(".chat-body");
 
     // ✅ Append User Message (Right-Aligned)
-    let userBubble = `<div class="user-message">${userMessage}</div>`;
-    chatBody.innerHTML += userBubble;
-
-    // ✅ Auto Scroll
+    chatBody.innerHTML += `<div class="user-message">${userMessage}</div>`;
     chatBody.scrollTop = chatBody.scrollHeight;
-
-    // ✅ Clear Input
     document.getElementById("userMessage").value = "";
 
     // ✅ Send message to backend
@@ -1773,15 +1923,67 @@ function sendMessage() {
     })
     .then(response => response.json())
     .then(data => {
-        let botMessage = data.choices[0].message.content || "Sorry, I couldn't understand that.";
-        let botBubble = `<div class="bot-message">${botMessage}</div>`;
-        chatBody.innerHTML += botBubble;
-
-        // ✅ Auto Scroll
+        let botMessage = formatBotResponse(data.choices[0].message.content || "Sorry, I couldn't understand that.");
+        chatBody.innerHTML += `<div class="bot-message">${botMessage}</div>`;
         chatBody.scrollTop = chatBody.scrollHeight;
     })
     .catch(error => {
         console.error("Error:", error);
+        chatBody.innerHTML += `<div class="bot-message">Oops! Something went wrong.</div>`;
+    });
+}
+
+function toggleExpand() {
+    const chatContainer = document.getElementById("chatPopup");
+    const expandBtn = document.querySelector(".expand-btn i");
+
+    chatContainer.classList.toggle("expanded");
+
+    if (chatContainer.classList.contains("expanded")) {
+        expandBtn.classList.remove("fa-expand");
+        expandBtn.classList.add("fa-compress"); // Show collapse icon
+    } else {
+        expandBtn.classList.remove("fa-compress");
+        expandBtn.classList.add("fa-expand"); // Show expand icon
+    }
+}
+
+
+
+// ✅ Voice Recognition Function (Supports English & Chinese)
+function startVoiceRecognition() {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert("Your browser doesn't support speech recognition. Please use Google Chrome.");
+        return;
+    }
+
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    
+    // ✅ Get selected language from dropdown
+    const selectedLang = document.getElementById("languageSelector").value;
+    recognition.lang = selectedLang;
+
+    recognition.start();
+
+    recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        document.getElementById("userMessage").value = transcript; // ✅ Fill input with voice text
+    };
+
+    recognition.onerror = function(event) {
+        console.error("Speech recognition error", event);
+        alert("Error with speech recognition. Try again.");
+    };
+}
+
+
+
+
+    </script>
+    
+    
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
         let botBubble = `<div class="bot-message">Oops! Something went wrong.</div>`;
         chatBody.innerHTML += botBubble;
     });

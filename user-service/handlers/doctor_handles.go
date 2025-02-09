@@ -139,7 +139,7 @@ func GetCompletedAssessments(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Query the database
-	query := "SELECT id, assessment_id, user_id, total_risk_score, completed_at FROM completedassessments WHERE user_id = ?"
+	query := "SELECT id, assessment_id, user_id, total_risk_score, completed_at FROM completed_assessments WHERE user_id = ?"
 	rows, err := database.DB.Query(query, userID)
 	if err != nil {
 		http.Error(w, "Failed to fetch data", http.StatusInternalServerError)
@@ -285,7 +285,7 @@ func DeleteAssessment(w http.ResponseWriter, r *http.Request) {
 	assessmentID := vars["id"]
 
 	// Prepare DELETE query
-	query := "DELETE FROM Assessments WHERE id = ?"
+	query := "DELETE FROM assessments WHERE id = ?"
 
 	// Execute DELETE query
 	result, err := database.DB.Exec(query, assessmentID)
