@@ -2,6 +2,7 @@ package utils
 
 import (
 	"crypto/rand"
+	"crypto/tls"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -80,7 +81,15 @@ func SendVerificationEmail(to, verificationLink string) error {
 	m.SetHeader("Subject", "Email Verification")
 	m.SetBody("text/plain", fmt.Sprintf("Please verify your email by clicking the link: %s", verificationLink))
 
+	// Create a custom TLS config
+	tlsConfig := &tls.Config{
+		ServerName:         "smtp.gmail.com", // Add the correct SMTP server here
+		InsecureSkipVerify: false,            // Don't skip certificate verification in production!
+	}
+
 	dialer := gomail.NewDialer(DefaultSMTPConfig.Host, DefaultSMTPConfig.Port, DefaultSMTPConfig.Username, DefaultSMTPConfig.Password)
+	dialer.TLSConfig = tlsConfig // Set the custom TLS config
+
 	return dialer.DialAndSend(m)
 }
 

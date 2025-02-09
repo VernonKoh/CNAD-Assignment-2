@@ -277,7 +277,7 @@ function checkGameOver() {
         };
 
         // ✅ Send game results to backend (game-service)
-        fetch("http://localhost:8083/game/submit", {
+        fetch("http://localhost:8080/game/submit", {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`,  // Include token if needed

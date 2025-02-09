@@ -38,8 +38,8 @@ func GetQuestions(w http.ResponseWriter, r *http.Request) {
 	// Prepare the SQL query with dynamic assessment_id
 	query := `
 	SELECT q.id, q.question_text, q.type, o.id AS option_id, o.option_text, o.risk_value
-	FROM Questions q
-	LEFT JOIN Options o ON q.id = o.question_id
+	FROM questions q
+	LEFT JOIN options o ON q.id = o.question_id
 	WHERE q.assessment_id = ?
 	ORDER BY q.id ASC, o.id ASC;
 	`
@@ -172,7 +172,7 @@ func SubmitAssessment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Step 1: Insert into CompletedAssessments
-	result, err := database.DB.Exec("INSERT INTO CompletedAssessments (assessment_id, user_id, total_risk_score, completed_at) VALUES (?, ?, ?, ?)",
+	result, err := database.DB.Exec("INSERT INTO completed_assessments (assessment_id, user_id, total_risk_score, completed_at) VALUES (?, ?, ?, ?)",
 		submission.AssessmentID, submission.UserID, submission.TotalRisk, time.Now())
 	if err != nil {
 		http.Error(w, "Failed to insert assessment", http.StatusInternalServerError)
@@ -187,7 +187,7 @@ func SubmitAssessment(w http.ResponseWriter, r *http.Request) {
 
 	// Step 2: Insert into SelectedOptions
 	for _, optionID := range submission.OptionIDs {
-		_, err := database.DB.Exec("INSERT INTO SelectedOptions (completed_id, option_id) VALUES (?, ?)", completedID, optionID)
+		_, err := database.DB.Exec("INSERT INTO selected_options (completed_id, option_id) VALUES (?, ?)", completedID, optionID)
 		if err != nil {
 			http.Error(w, "Failed to insert selected options", http.StatusInternalServerError)
 			return

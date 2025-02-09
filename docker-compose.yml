@@ -7,8 +7,12 @@ services:
       - "8081:8081"
     networks:
       - app-network
-    command: /bin/bash -c "until nc -z database 3306; do echo 'Waiting for MySQL...'; sleep 2; done && ./user-service"
-
+    command: /bin/bash -c "until nc -z database 3306; do echo 'Waiting for MySQL...'; sleep 2; done && /app/main"
+    environment:
+      - SMTP_USER=avengersenemysg@gmail.com
+      - SMTP_PASS=your-app-specific-password
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=465  # or 587 if you're using TLS
   game-service:
     build:
       context: .
@@ -17,7 +21,7 @@ services:
       - "8083:8083"
     networks:
       - app-network
-    command: /bin/bash -c "until nc -z database 3306; do echo 'Waiting for MySQL...'; sleep 2; done && ./game-service"
+    command: /bin/bash -c "until nc -z database 3306; do echo 'Waiting for MySQL...'; sleep 2; done && /app/main"
 
   assessment-service:
     build:
@@ -27,7 +31,22 @@ services:
       - "8082:8082"
     networks:
       - app-network
-    command: /bin/bash -c "until nc -z database 3306; do echo 'Waiting for MySQL...'; sleep 2; done && ./assessment-service"
+    command: /bin/bash -c "until nc -z database 3306; do echo 'Waiting for MySQL...'; sleep 2; done && /app/main"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: ./Frontend/Frontend_Dockerfile
+    ports:
+      - "8080:8080"
+    restart: always
+    networks:
+      - app-network
+    volumes:
+    - ./Frontend:/usr/share/nginx/html  # Mount the frontend directory
+    depends_on:
+    - user-service
+    - database
 
   database:
     image: mysql:8.0
@@ -42,7 +61,7 @@ services:
     networks:
       - app-network
     volumes:
-      - ./SQL\ database.sql:/docker-entrypoint-initdb.d/database.sql # Mount the SQL file to initialize the database
+      - ./sql:/docker-entrypoint-initdb.d
 
 networks:
   app-network:
