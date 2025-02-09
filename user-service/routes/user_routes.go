@@ -40,6 +40,10 @@ func RegisterUserRoutes(router *mux.Router) {
 	//doctor functions
 	userRouter.HandleFunc("/search", handlers.SearchUsers).Methods("GET")
 	userRouter.HandleFunc("/completed_assessments/{userid}", handlers.GetCompletedAssessments).Methods("GET")
+	userRouter.HandleFunc("/assessments", handlers.CreateAssessment).Methods("POST") // New route
+	userRouter.HandleFunc("/questions", handlers.CreateQuestion).Methods("POST")
+	userRouter.HandleFunc("/options", handlers.CreateOption).Methods("POST")
+	userRouter.HandleFunc("/assessments/{id}", handlers.DeleteAssessment).Methods("DELETE")
 
 	// ✅ ADD Health Check Route (NEW)
 	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -70,3 +74,15 @@ func RegisterUserRoutes(router *mux.Router) {
 
 //Get all of User's completed assessments
 //http://localhost:8081/api/v1/users/completed_assessments/4
+
+//create new assessments
+//curl -X POST http://localhost:8081/api/v1/users/assessments -H "Content-Type: application/json" -d "{\"name\":\"Risk Assessment\",\"description\":\"An assessment to evaluate risk levels.\"}"
+
+//create question
+//curl -X POST http://localhost:8081/api/v1/users/questions -H "Content-Type: application/json" -d "{\"assessment_id\":4,\"question_text\":\"What is your risk level?\",\"type\":\"mcq\"}"
+
+//create option
+//curl -X POST http://localhost:8081/api/v1/users/options -H "Content-Type: application/json" -d "{\"assessment_id\":4,\"question_id\":1,\"option_text\":\"Low Risk\",\"risk_value\":1}"
+
+//delete assessment
+//curl -X DELETE http://localhost:8081/api/v1/users/assessments/19

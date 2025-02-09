@@ -34,9 +34,10 @@ func GetQuestions(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Missing assessment ID", http.StatusBadRequest)
 		return
 	}
+
 	// Prepare the SQL query with dynamic assessment_id
 	query := `
-	SELECT q.id, q.question_text, q.type, o.id, o.option_text, o.risk_value
+	SELECT q.id, q.question_text, q.type, o.id AS option_id, o.option_text, o.risk_value
 	FROM Questions q
 	LEFT JOIN Options o ON q.id = o.question_id
 	WHERE q.assessment_id = ?
@@ -49,52 +50,74 @@ func GetQuestions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer rows.Close()
+
 	questionsMap := make(map[int]*Question)
 
 	for rows.Next() {
-		var qID, oID, risk int
-		var qText, qType, oText string
+		var qID int
+		var qText, qType string
+		var oID *int      // Use a pointer to allow for NULL values in option ID
+		var oText *string // Use a pointer to handle NULL in option_text
+		var risk *int     // Use a pointer to handle NULL in risk_value
 
+		// Scan the values, where oID is a pointer to int and oText is a pointer to string
 		err := rows.Scan(&qID, &qText, &qType, &oID, &oText, &risk)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
+		// If this is a new question, initialize it
 		if _, exists := questionsMap[qID]; !exists {
 			questionsMap[qID] = &Question{
 				ID:           qID,
 				QuestionText: qText,
 				Type:         qType,
-				Options:      []Option{},
+				Options:      []Option{}, // Initialize the Options slice
 			}
 		}
 
-		if oID != 0 {
-			questionsMap[qID].Options = append(questionsMap[qID].Options, Option{ID: oID, OptionText: oText, RiskValue: risk})
+		// Only append options if oID and oText are not nil
+		if oID != nil && oText != nil {
+			questionsMap[qID].Options = append(questionsMap[qID].Options, Option{
+				ID:         *oID,               // Dereference the pointer to get the ID
+				OptionText: *oText,             // Dereference the pointer to get the option text
+				RiskValue:  getRiskValue(risk), // Use helper function to get the value of risk
+			})
 		}
 	}
 
+	// Convert the map to a slice
 	var questions []Question
 	for _, q := range questionsMap {
 		questions = append(questions, *q)
 	}
+
 	log.Printf("Fetched assessment: ID=%s", assessmentID)
 
+	// Return the JSON response
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(questions)
 }
 
+// Helper function to handle possible NULL values for risk_value
+func getRiskValue(risk *int) int {
+	if risk == nil {
+		return 0 // Default value when risk is NULL
+	}
+	return *risk
+}
+
 // Assessment struct
 type Assessment struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
+	ID          int    `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
 // GetAssessments returns all available quizzes
 func GetAssessments(w http.ResponseWriter, r *http.Request) {
-	rows, err := database.DB.Query("SELECT id, name FROM assessments")
-
+	rows, err := database.DB.Query("SELECT id, name, description FROM assessments")
 	if err != nil {
 		http.Error(w, "Failed to fetch assessments", http.StatusInternalServerError)
 		return
@@ -104,7 +127,7 @@ func GetAssessments(w http.ResponseWriter, r *http.Request) {
 	var assessments []Assessment
 	for rows.Next() {
 		var a Assessment
-		if err := rows.Scan(&a.ID, &a.Name); err != nil {
+		if err := rows.Scan(&a.ID, &a.Name, &a.Description); err != nil {
 			http.Error(w, "Error scanning assessments", http.StatusInternalServerError)
 			return
 		}

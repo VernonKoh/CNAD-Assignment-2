@@ -162,3 +162,152 @@ func GetCompletedAssessments(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(assessments)
 }
+
+// Assessment struct
+type NewAssessment struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+// CreateAssessment handles creating a new assessment
+func CreateAssessment(w http.ResponseWriter, r *http.Request) {
+	var newAssessment NewAssessment
+
+	// Decode the JSON request body
+	if err := json.NewDecoder(r.Body).Decode(&newAssessment); err != nil {
+		http.Error(w, `{"error": "Invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Insert into the database
+	query := "INSERT INTO assessments (name, description) VALUES (?, ?)"
+	result, err := database.DB.Exec(query, newAssessment.Name, newAssessment.Description)
+	if err != nil {
+		http.Error(w, `{"error": "Failed to create assessment"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Get the newly inserted assessment ID
+	assessmentID, _ := result.LastInsertId()
+
+	// Send response with the new assessment ID
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message":       "Assessment created successfully",
+		"assessment_id": assessmentID,
+	})
+}
+
+// CreateQuestion handles creating a new question
+func CreateQuestion(w http.ResponseWriter, r *http.Request) {
+	// Decode the JSON body
+	var question struct {
+		AssessmentID int    `json:"assessment_id"`
+		QuestionText string `json:"question_text"`
+		Type         string `json:"type"`
+	}
+
+	// Decode the request body into the question structure
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&question); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	// Insert the new question into the database
+	query := `INSERT INTO questions (assessment_id, question_text, type) VALUES (?, ?, ?)`
+	result, err := database.DB.Exec(query, question.AssessmentID, question.QuestionText, question.Type)
+	if err != nil {
+		http.Error(w, "Failed to create question", http.StatusInternalServerError)
+		return
+	}
+
+	// Retrieve the ID of the newly inserted question
+	questionID, err := result.LastInsertId()
+	if err != nil {
+		http.Error(w, "Failed to retrieve question ID", http.StatusInternalServerError)
+		return
+	}
+
+	// Respond with the success message and the question ID
+	w.WriteHeader(http.StatusCreated)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message":     "Question created successfully",
+		"question_id": questionID, // Return the question ID
+	})
+}
+
+type newOption struct {
+	ID           int    `json:"id"`
+	AssessmentID int    `json:"assessment_id"`
+	QuestionID   int    `json:"question_id"`
+	OptionText   string `json:"option_text"`
+	RiskValue    int    `json:"risk_value"`
+}
+
+// CreateOption creates a new option in the database
+func CreateOption(w http.ResponseWriter, r *http.Request) {
+	var newOption newOption
+
+	// Parse the JSON body into the Option struct
+	if err := json.NewDecoder(r.Body).Decode(&newOption); err != nil {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+
+	// SQL query to insert the new option into the options table
+	query := "INSERT INTO options (assessment_id, question_id, option_text, risk_value) VALUES (?, ?, ?, ?)"
+
+	// Execute the query
+	result, err := database.DB.Exec(query, newOption.AssessmentID, newOption.QuestionID, newOption.OptionText, newOption.RiskValue)
+	if err != nil {
+		http.Error(w, "Failed to create option", http.StatusInternalServerError)
+		return
+	}
+
+	// Get the ID of the newly created option
+	lastInsertID, err := result.LastInsertId()
+	if err != nil {
+		http.Error(w, "Failed to retrieve inserted option ID", http.StatusInternalServerError)
+		return
+	}
+
+	// Respond with the newly created option
+	newOption.ID = int(lastInsertID)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(newOption)
+}
+
+// DeleteAssessmentHandler deletes an assessment by ID
+func DeleteAssessment(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	assessmentID := vars["id"]
+
+	// Prepare DELETE query
+	query := "DELETE FROM Assessments WHERE id = ?"
+
+	// Execute DELETE query
+	result, err := database.DB.Exec(query, assessmentID)
+	if err != nil {
+		http.Error(w, "Failed to delete assessment", http.StatusInternalServerError)
+		log.Println("Error deleting assessment:", err)
+		return
+	}
+
+	// Check if any row was affected
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		http.Error(w, "Assessment not found", http.StatusNotFound)
+		return
+	}
+
+	// Success response
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message":      "Assessment deleted successfully",
+		"assessmentID": assessmentID, // Return the question ID
+	})
+	log.Println("Assessment with ID ", assessmentID, "deleted successfully")
+}

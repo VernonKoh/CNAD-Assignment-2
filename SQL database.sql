@@ -26,25 +26,15 @@ CREATE TABLE IF NOT EXISTS users (
     is_verified BOOLEAN DEFAULT FALSE,
     verification_token VARCHAR(255),
     facial_id VARCHAR(255) NULL,
+    high_risk BOOLEAN DEFAULT FALSE,  -- New column added
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Check if the column 'high_risk' exists before adding it
-SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
-                   WHERE TABLE_NAME = 'users' 
-                   AND COLUMN_NAME = 'high_risk' 
-                   AND TABLE_SCHEMA = DATABASE());
-
--- Add column only if it does not exist
-SET @query = IF(@col_exists = 0, 'ALTER TABLE users ADD COLUMN high_risk BOOLEAN DEFAULT FALSE;', 'SELECT "Column already exists";');
-PREPARE stmt FROM @query;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
 
 -- Step 9: Create user_details table if it doesn't exist
 CREATE TABLE IF NOT EXISTS user_details (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT,
+    user_id INT NOT NULL,
     age INT,
     gender VARCHAR(10),
     address TEXT,
@@ -65,11 +55,6 @@ CREATE TABLE IF NOT EXISTS doctors (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Step 11: Insert a sample doctor profile only if it doesn't already exist
-INSERT INTO doctors (email, password, name, license_number, hospital, is_verified) 
-SELECT 'doctor@example.com', 'doctor123', 'Dr. John Doe', 'DOC123456', 'General Hospital', TRUE
-WHERE NOT EXISTS (SELECT 1 FROM doctors WHERE email = 'doctor@example.com');
-
 -- Step 12: Create game_scores table if it doesn't exist
 CREATE TABLE IF NOT EXISTS game_scores (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -78,19 +63,6 @@ CREATE TABLE IF NOT EXISTS game_scores (
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-
--- Step 13: Add column only if it doesn't exist
--- Check if the column 'time_taken' exists before adding it
-SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
-                   WHERE TABLE_NAME = 'game_scores' 
-                   AND COLUMN_NAME = 'time_taken' 
-                   AND TABLE_SCHEMA = DATABASE());
-
--- Add column only if it does not exist
-SET @query = IF(@col_exists = 0, 'ALTER TABLE game_scores ADD COLUMN time_taken INT NOT NULL DEFAULT 0;', 'SELECT "Column already exists";');
-PREPARE stmt FROM @query;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
 
 -- Step 14: Create the Assessments table
 CREATE TABLE IF NOT EXISTS Assessments (
@@ -105,7 +77,7 @@ CREATE TABLE IF NOT EXISTS Questions (
     assessment_id INT NOT NULL,
     question_text TEXT NOT NULL,
     type ENUM('mcq', 'text', 'number') NOT NULL,
-    FOREIGN KEY (assessment_id) REFERENCES Assessments(id)
+    FOREIGN KEY (assessment_id) REFERENCES Assessments(id) ON DELETE CASCADE
 );
 
 -- Step 16: Create Options table
@@ -115,18 +87,19 @@ CREATE TABLE IF NOT EXISTS Options (
     question_id INT NOT NULL,
     option_text TEXT NOT NULL,
     risk_value INT NOT NULL DEFAULT 0,
-    FOREIGN KEY (assessment_id) REFERENCES Assessments(id),
-    FOREIGN KEY (question_id) REFERENCES Questions(id)
+    FOREIGN KEY (assessment_id) REFERENCES Assessments(id) ON DELETE CASCADE,
+    FOREIGN KEY (question_id) REFERENCES Questions(id) ON DELETE CASCADE
 );
 
--- Step 17: Create CompletedAssessments table
+-- Step 17: Create CompletedAssessments table (FIXED SYNTAX ERROR)
 CREATE TABLE IF NOT EXISTS CompletedAssessments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     assessment_id INT NOT NULL,
     user_id INT NOT NULL,
     total_risk_score INT NOT NULL,
     completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (assessment_id) REFERENCES Assessments(id)
+    FOREIGN KEY (assessment_id) REFERENCES Assessments(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Step 18: Create SelectedOptions table
@@ -134,8 +107,8 @@ CREATE TABLE IF NOT EXISTS SelectedOptions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     completed_id INT NOT NULL,
     option_id INT NOT NULL,
-    FOREIGN KEY (completed_id) REFERENCES CompletedAssessments(id),
-    FOREIGN KEY (option_id) REFERENCES Options(id)
+    FOREIGN KEY (completed_id) REFERENCES CompletedAssessments(id) ON DELETE CASCADE, 
+    FOREIGN KEY (option_id) REFERENCES Options(id) ON DELETE CASCADE
 );
 
 -- Step 19: Insert assessment only if it doesn’t exist
