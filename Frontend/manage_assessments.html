@@ -5,20 +5,133 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Assessments</title>
     <style>
-        body { font-family: Arial, sans-serif; }
-        .container { width: 60%; margin: auto; text-align: center; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid black; padding: 10px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        button { padding: 8px 12px; margin: 5px; cursor: pointer; }
-        .delete-btn { background-color: red; color: white; border: none; }
-        .edit-btn { background-color: blue; color: white; border: none; }
+        /* General Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: #007bff;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: bold;
+            transition: 0.3s ease;
+        }
+
+        .navbar a:hover {
+            text-decoration: underline;
+        }
+
+        /* Page Container */
+        .container {
+            width: 80%;
+            max-width: 900px;
+            margin: auto;
+            text-align: center;
+            padding-top: 20px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        /* Action Buttons */
+        .action-btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.3s ease;
+            margin-right: 5px;
+        }
+
+        .edit-btn {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .edit-btn:hover {
+            background-color: #e0a800;
+        }
+
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+
+        /* Create Assessment Button (Moved Below Table) */
+        .create-btn {
+            padding: 12px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: 0.3s ease;
+            margin-top: 20px; /* Space from table */
+            display: inline-block;
+        }
+
+        .create-btn:hover {
+            background-color: #218838;
+        }
     </style>
 </head>
 <body>
+
+    <!-- Navbar -->
+    <div class="navbar">
+        <a href="doctorwelcome.html">🏠 Home</a>
+    </div>
+
+    <!-- Page Content -->
     <div class="container">
-        <h1>Assessments</h1>
-        <button onclick="location.href='create_assessment.html'">Create New Assessment</button>
+        <h1>📋 Assessments</h1>
+
         <table>
             <thead>
                 <tr>
@@ -32,6 +145,9 @@
                 <!-- Data will be populated here dynamically -->
             </tbody>
         </table>
+
+        <!-- Create Assessment Button (Moved Below Table) -->
+        <button class="create-btn" onclick="location.href='create_assessment.html'">➕ Create New Assessment</button>
     </div>
 
     <script>
@@ -48,8 +164,8 @@
                     <td>${a.name}</td>
                     <td>${a.description || "No description"}</td>
                     <td>
-                        <button class="edit-btn" onclick="editAssessment(${a.id})">Edit</button>
-                        <button class="delete-btn" onclick="deleteAssessment(${a.id})">Delete</button>
+                        <button class="action-btn edit-btn" onclick="editAssessment(${a.id})">✏️ Edit</button>
+                        <button class="action-btn delete-btn" onclick="deleteAssessment(${a.id})">🗑 Delete</button>
                     </td>
                 `;
                 tableBody.appendChild(row);
@@ -84,5 +200,6 @@
 
         fetchAssessments();
     </script>
+
 </body>
 </html>
