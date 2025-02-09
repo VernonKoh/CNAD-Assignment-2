@@ -10,7 +10,7 @@ import (
 )
 
 // Your OpenRouter API Key
-var openRouterAPIKey = "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"
+var openRouterAPIKey = "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"
 
 // ChatHandler processes chatbot requests
 func ChatHandler(w http.ResponseWriter, r *http.Request) {
@@ -28,22 +28,26 @@ func ChatHandler(w http.ResponseWriter, r *http.Request) {
 	resp, err := client.R().
 		SetHeader("Authorization", "Bearer "+openRouterAPIKey).
 		SetHeader("Content-Type", "application/json").
+		SetHeader("Accept", "application/json"). // Ensure API returns JSON
+		SetHeader("HTTP-Referer", "http://localhost:8081").
+		SetHeader("X-Title", "Lion Befrienders Chatbot").
 		SetBody(map[string]interface{}{
 			"model": "deepseek/deepseek-chat",
 			"messages": []map[string]string{
-				{"role": "system", "content": "You are a helpful assistant for elderly users."},
+				{"role": "system", "content": "You are a fall-risk self-assessment assistant for elderly users."},
 				{"role": "user", "content": req.Message},
 			},
 		}).
 		Post("https://openrouter.ai/api/v1/chat/completions")
 
+	// ✅ LOG THE RAW RESPONSE BEFORE PARSING
 	if err != nil {
-		log.Println("❌ Error calling OpenRouter API:", err)
+		log.Println("❌ Error making request to OpenRouter API:", err)
 		http.Error(w, "Error communicating with OpenRouter API", http.StatusInternalServerError)
 		return
 	}
 
-	log.Println("✅ API Response:", resp.String())
+	log.Println("📩 Raw API Response:", resp.Status(), string(resp.Body())) // ✅ Log API response
 
 	var chatbotResponse models.ChatbotResponse
 	err = json.Unmarshal(resp.Body(), &chatbotResponse)

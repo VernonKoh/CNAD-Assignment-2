@@ -63,10 +63,7 @@ CREATE TABLE IF NOT EXISTS game_scores (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-<<<<<<< HEAD:SQL/SQL database.sql
--- Step 14: Create the assessments table
-CREATE TABLE IF NOT EXISTS assessments (
-=======
+
 -- Add column only if it does not exist
 SET @query = IF(@col_exists = 0, 'ALTER TABLE game_scores ADD COLUMN time_taken INT NOT NULL DEFAULT 0;', 'SELECT "Column already exists";');
 PREPARE stmt FROM @query;
@@ -74,8 +71,7 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
 -- Step 14: Create the Assessments table
-CREATE TABLE IF NOT EXISTS Assessments (
->>>>>>> e62f610c7489058dbc208d450d8178cd47a166ba:SQL database.sql
+CREATE TABLE IF NOT EXISTS assessments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT

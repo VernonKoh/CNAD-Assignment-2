@@ -277,7 +277,7 @@ function checkGameOver() {
         };
 
         // ✅ Send game results to backend (game-service)
-        fetch("http://localhost:8080/game/submit", {
+        fetch("http://localhost:8083/game/submit", {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`,  // Include token if needed
@@ -285,15 +285,17 @@ function checkGameOver() {
             },
             body: JSON.stringify(gameData)
         })
-        .then(response => response.json())
-        .then(data => {
+        .then(response => {
+            console.log("Backend Response: ", response);
+            return response.json();
+})        .then(data => {
             if (data.message) {
                 // ✅ Store user score & time in localStorage for gamescore.html
                 localStorage.setItem("lastGameScore", score);
                 localStorage.setItem("lastGameTime", elapsedTime);
 
                 // ✅ Redirect user to `gamescore.html`
-                window.location.href = "gamescore.html";
+                window.location.href = "http://localhost:8080/gamescore.html";
             } else {
                 alert("❌ Error saving score. Try again.");
             }

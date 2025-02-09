@@ -64,7 +64,7 @@
     <p>Your Score: <span id="score">Loading...</span></p>
     <p>Time Taken: <span id="time">Loading...</span> seconds</p>
     <p id="memory-rating">🔍 Memory Rating: Evaluating...</p>
-
+    <h2> Keep playing this memory game regularly to boost your memory and cognitive skills! The more you play, the sharper your mind becomes! 🧠💡</h2>
     <h2>🏆 Best Score (Lowest Time)</h2>
     <p id="best-score">Loading...</p>
 
@@ -117,7 +117,7 @@
         document.getElementById("memory-rating").textContent = `🔍 Memory Rating: ${getMemoryRating(lastGameTime)}`;
 
         // ✅ Fetch and display past scores
-        fetch(`http://localhost:8080/game/scores/${userID}`)
+        fetch(`http://localhost:8083/game/scores/${userID}`)
             .then(response => response.json())
             .then(data => {
                 console.log("Fetched Scores:", data); // ✅ Debug Output
