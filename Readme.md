@@ -1,98 +1,146 @@
-# README
+# Fall Risk Self-Assessment Microservices Architecture
 
-## 1. Design Consideration
+This project is designed using **Microservices Architecture** to support a **Fall Risk Self-Assessment System**. The system is split into distinct services to ensure scalability, maintainability, and independent deployment. The architecture supports fall risk assessment, cognitive training, chatbot interactions, and real-time video analysis.
 
-### 1.1 Overview
+## Table of Contents
+1. [Design Considerations of the Microservices](#design-considerations)
+2. [Architecture Diagram](#architecture-diagram)
+3. [Instructions for Setting Up and Running Microservices](#setup-instructions)
+4. [Why Microservices Architecture?](#why-microservices)
 
-The **Fall Risk Self-Assessment Website** is designed as an interactive tool to help elderly individuals assess their risk of falling. Developed in collaboration with **Lion Befrienders**, this solution aims to provide a seamless and engaging experience that empowers seniors to take preventive actions against falls. The system integrates various assessment techniques, including questionnaires, video analysis, and cognitive games, to deliver a comprehensive evaluation.
+## Design Considerations of the Microservices
 
-The platform was initially developed as a **local microservices-based architecture** and later scaled with **Docker** to enhance deployment efficiency. This transition showcases the evolution of our solution from a traditional microservices setup to a cloud-native, containerized infrastructure. Our approach focuses on gradual improvements while maintaining system reliability and accessibility.
+### 1. Service Decomposition
 
-The key considerations in the design include:
+The system is decomposed into distinct services that handle specific functionalities. Each service operates independently and interacts with others via **RESTful APIs**.
 
-- **User Accessibility**: Ensuring that the interface is easy to use for elderly users.
-- **Modularity**: The system is divided into independent components for better maintainability.
-- **Scalability**: The architecture allows for easy expansion and integration of new features.
-- **Performance**: Efficient algorithms and database optimizations are implemented to improve response times.
-- **Security**: Proper authentication and authorization mechanisms are in place to ensure data safety.
+- **User Service**: Manages user registration, authentication, and profile management. Users can sign up, log in, and access their assessment history.
+- **Assessment Service**: Handles the fall risk self-assessment questionnaire and scoring logic. Users answer a set of questions to evaluate their fall risk level.
+- **Game Service**: Provides a cognitive training game (Memory Card Matching) to improve mental agility. Tracks game progress and performance.
+- **Chatbot Service (LionBee API)**: A RESTful chatbot service that provides interactive support using speech-to-text technology. Supports four languages: English, Chinese, Malay, and Tamil.
+- **Video Analysis Service**: Uses AI-driven motion tracking to analyze walking patterns and detect fall risks. Processes video data for movement stability assessment.
 
-### 1.2 Key Features
+**Benefits of Service Decomposition**:
+- **Scalability**: Each service can be scaled independently. For example, the **Video Analysis Service** can be scaled separately to handle higher computational demands.
+- **Maintainability**: Services can be updated or maintained without affecting other parts of the system.
 
-- **Fall Risk Questionnaire**: A structured questionnaire that evaluates an elderly user's mobility, medical conditions, and daily activities to estimate their fall risk.
-- **Video Analysis**: Utilizes AI-driven motion tracking to analyze walking patterns and detect early indicators of instability.
-- **Memory Card Matching Game**: A gamified cognitive training tool aimed at improving memory retention and mental agility.
-- **Chatbot (LionBee)**: A REST API-driven chatbot that provides interactive support using speech-to-text technology, available in English, Chinese, Malay, and Tamil.
-- **Email Notifications**: Automatically alerts relevant personnel when an elderly user is identified as high-risk, ensuring timely intervention.
-- **Scalable Deployment Evolution**: The system began as a fully local microservices architecture and has progressively incorporated Docker to enhance scalability, deployment, and maintainability.
+### 2. Inter-Service Communication
 
-### 1.3 Key Design Decisions
+Services communicate using **RESTful APIs** with well-defined API contracts. This ensures that the system remains loosely coupled and flexible.
 
-- **Phased Microservice Migration**: Initially developed with a fully local microservice architecture, the system has been gradually transitioned to Docker containers. This phased approach demonstrates improvements in scalability, deployment efficiency, and operational resilience, aligning with modern cloud-native best practices.
-- **User-Friendly Interface**: The website follows a simple and intuitive UI/UX design for ease of navigation.
-- **Multilingual Support**: Ensures inclusivity by supporting four languages for chatbot interactions.
-- **RESTful API**: The backend is exposed as a REST API for easy integration with different frontend clients.
-- **Database Selection**: MySQL was chosen for its reliability and scalability.
-- **Deployment Consideration**: The system is containerized using Docker for easy deployment and portability.
+- **User Service API**: Manages user-related operations such as registration and authentication.
+- **Assessment Service API**: Provides endpoints for managing fall risk questionnaires and results.
+- **Game Service API**: Handles game-related logic and progress tracking.
+- **Chatbot Service API**: Processes speech-to-text interactions and chatbot conversations.
 
-## 2. Architecture Diagram
+By following RESTful principles, services can evolve independently without affecting the entire system.
 
-Below is the architecture diagram of the solution:
+### 3. Database Per Service
 
-[Frontend (React/HTML)]  ---> [API Gateway]  ---> [Backend (Go/Python)]  ---> [Database]
-                                               |                          
-                                               v                          
-                                         [Video Processing]               
-                                               |                          
-                                               v                          
-                                       [AI Model for Analysis]        
+Each microservice maintains its own database to ensure **data isolation and independence**. This improves **fault tolerance** and prevents cross-service data dependencies.
 
+- **User Service Database**: Stores user credentials, profiles, and history.
+- **Assessment Service Database**: Stores questionnaire results and risk assessment data.
+- **Game Service Database**: Maintains game progress and user scores.
+- **Chatbot Service Database**: Manages chatbot interactions and user responses.
+- **Video Analysis Service Database**: Stores motion analysis data and reports.
 
-*Explanation of components:*
+This ensures that if one database fails, the other services can continue operating without disruption.
 
-- **Frontend**: User interface built with HTML/CSS/JS.
-- **API Gateway**: Manages requests and routes them to appropriate backend services.
-- **Backend**: Handles data processing, risk calculations, chatbot interactions, and game logic.
-- **Database**: Stores risk assessment results, game scores, etc.
-- **Video Processing**: Analyzes user movements for fall risk detection.
-- **AI Model for Analysis**: Processes video analysis data.
-- **Chat-Service**: A REST API handling chatbot interactions, running locally.
-- **Game-Service**: Containerized microservice managing the memory card matching game.
-- **User-Service**: Containerized microservice managing user authentication and profiles.
+### 4. Error Handling and Logging
 
-## 3. Setup & Running Instructions
+Each service includes robust **error handling** and **logging mechanisms**:
 
-### 3.1 Prerequisites
+- **Structured Logging**: Logs important events such as API requests, database operations, and errors.
+- **Meaningful HTTP Responses**: Services return appropriate status codes (e.g., `400` for invalid input, `500` for server errors).
+- **Service Resilience**: If one service fails, others can continue running independently.
 
-- Install necessary dependencies such as Docker, Node.js, Go, etc.
-- Ensure the database is set up and running.
-- Install Pip for python service
+## Architecture Diagram
+
+Below is the architecture diagram illustrating the microservices and their interactions:
+
+```plaintext
+                           +------------------+
+                           |   User Service   |
+                           | (Authentication, |
+                           | Profiles, History)|
+                           +--------+---------+
+                                    |
+                          RESTful API |  
+                                    |
+          +-------------------------+------------------------+
+          |                                                  |
++---------+------------+                          +---------+------------+
+| Assessment Service  |                          |  Chatbot Service     |
+| (Questionnaire,     |                          |  (Speech-to-Text)     |
+| Risk Calculation)   |                          +----------------------+
++---------------------+                              
+          |                                          |
+       RESTful API                                  RESTful API
+          |                                          |
++---------+------------+                          +---------+------------+
+| Game Service        |                          |  Video Analysis       |
+| (Memory Card Game)  |                          |  (Motion Tracking AI) |
++---------------------+                          +----------------------+
+          |                                          |
+       RESTful API                                  RESTful API
+          |                                          |
++---------+------------+                          +---------+------------+
+|  Database (Users)    |                          |  Database (Analysis)  |
++---------------------+                          +----------------------+
+
+```
+### Key Takeaways:
+- **Independent Microservices**: Each service runs independently with its own database.
+- **Fault Isolation**: If one service fails, others continue operating without disruption.
+- **Scalability**: Services can be individually scaled based on workload.
+
+## Instructions for Setting Up and Running Microservices
+
+### 1. Prerequisites
+
+- Install **Go**, **Docker**, and **Python** (for video processing).
+- Install **Pip** for Python dependencies:
+  ```sh
+  pip install opencv-python numpy mediapipe flask
+
+### 2. Installation Steps
+
+**Step 1: Start the Application**
+
+Run dependency management:
+
 ```sh
-pip install opencv-python numpy mediapipe flask
+go mod tidy
+```
+Run User Service and Game Service via Docker:
+```sh
+docker-compose build && docker-compose up
 ```
 
-### 3.2 Installation Steps
+Start other services manually in separate terminal windows:
+```sh
+go run assessment-service/main.go
+go run chat-service/main.go
+python mediapipe_server.py
+```
 
-4. Start the application:
-   - Run dependency management:
-     ```sh
-     go mod tidy
-     ```
-   - Run **User Service** and **Game Service** via Docker:
-     ```sh
-     docker-compose build && docker-compose up
-     ```
-   - Start other services manually in separate terminal windows:
-     ```sh
-     go run assessment-service/main.go
-     ```
-     ```sh
-     go run chat-service/main.go
-     ```
-     ```sh
-     py mediapipe_server.py
-     ```
-5. Access the application:
-   - Website: `http://localhost:8081`
-   - API Endpoint: `http://localhost:8081/api`
+Step 2: Access the Application
 
----
+Website: http://localhost:8081
+API Endpoint: http://localhost:8081/api
+
+Why Microservices Architecture?
+Scalability: Individual services can be scaled based on demand. For example, Video Analysis Service can scale separately to handle increased processing loads.
+
+Fault Isolation: If one service goes down, the others continue running. This ensures higher reliability and uptime.
+
+Independent Databases: Each service manages its own database, improving data security and reducing dependencies.
+
+Flexibility and Maintainability:
+
+Independent Development: Teams can work on different services simultaneously.
+Faster Deployments: Updates to one service do not require changes to others.
+
+### Conclusion
+This microservices-based Fall Risk Self-Assessment System ensures a scalable, resilient, and modular solution. By leveraging RESTful APIs, independent databases, and containerized deployments, this architecture enhances flexibility, maintainability, and long-term system performance.
