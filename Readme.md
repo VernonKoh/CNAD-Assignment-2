@@ -116,7 +116,7 @@ Below is the architecture diagram illustrating the microservices and their inter
 Run dependency management:
 ```sh
 go mod tidy
-
+```
 
 Run User Service and Game Service via Docker:
 
