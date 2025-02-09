@@ -180,6 +180,6 @@ The LionBee Chatbot utilizes the DeepSeek API. It uses an API key obtained from 
 4. Flexibility and Maintainability:
    - Independent Development: Teams can work on different services simultaneously.
    - Faster Deployments: Updates to one service do not require changes to others.
-   - 
+     
 **Conclusion**
 This microservices-based Fall Risk Self-Assessment System ensures a scalable, resilient, and modular solution. By leveraging RESTful APIs, independent databases, and containerized deployments, this architecture enhances flexibility, maintainability, and long-term system performance.
