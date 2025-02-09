@@ -86,7 +86,6 @@
         }
         /* Redirect Button */
         #redirectButton {
-            display: none; /* Hidden by default */
             background-color: #dc3545; /* Red for urgency */
             margin-top: 20px;
         }
@@ -122,6 +121,12 @@
         <button type="button" id="uploadFileBtn" style="background-color: #ffc107;">Upload Video</button>
         <button type="submit" style="margin-top: 10px;">Submit</button>
     </form>
+
+    <!-- Redirect Button -->
+    <div id="clinicsSection" style="display: none; margin-top: 20px;">
+        <h4>Worried about your Gait? Find Nearby Clinics for proper analysis</h4>
+        <button id="redirectButton">Find Nearby Clinics</button>
+    </div>
 
     <div id="loadingIndicator" style="display: none;">
         <p>Uploading and processing video... Please wait.</p>
@@ -195,18 +200,25 @@
                     videoPlayer.height = 480; // Set desired height
                     document.body.appendChild(videoPlayer);
 
-                } else {
-                    alert("Error: Invalid response from server. Please try again later.");
-                }
-            } catch (error) {
-                console.error('Error uploading video:', error);
-                alert("Failed to upload video. Please try again later.");
-            } finally {
-                // Hide loading indicator (ensure it's hidden even if an error occurs)
-                document.getElementById('loadingIndicator').style.display = "none";
-            }
-        });
+            // Make Clinic Button Available
+            document.getElementById('clinicsSection').style.display = "block";
 
+        } else {
+            alert("Error: Invalid response from server. Please try again later.");
+        }
+    } catch (error) {
+        console.error('Error uploading video:', error);
+        alert("Failed to upload video. Please try again later.");
+    } finally {
+        // Hide loading indicator (ensure it's hidden even if an error occurs)
+        document.getElementById('loadingIndicator').style.display = "none";
+    }
+});
+
+document.getElementById('redirectButton').addEventListener('click', () => {
+            // Redirect to the clinics page
+            window.location.href = "clinics.html";
+        });
         // Handle webcam access
         document.getElementById('webcamMode').addEventListener('click', () => {
             document.getElementById('webcamFeed').src = "http://127.0.0.1:5000/webcam";
