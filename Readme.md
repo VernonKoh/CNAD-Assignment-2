@@ -87,6 +87,3 @@ Below is the architecture diagram of the solution:
    - API Endpoint: `http://localhost:8081/api`
 
 ---
-
-This README provides the necessary details to understand, set up, and run the project efficiently. Modify it as needed based on your project's specifics.
-    
