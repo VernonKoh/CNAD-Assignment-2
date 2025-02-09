@@ -64,4 +64,9 @@ func main() {
 	// Start the server with CORS enabled
 	fmt.Println("Server is running on http://localhost:8081")
 	log.Fatal(http.ListenAndServe(":8081", corsMiddleware(r)))
+
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("User Service is healthy"))
+	})
 }

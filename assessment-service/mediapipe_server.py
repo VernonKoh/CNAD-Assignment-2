@@ -16,9 +16,21 @@ mp_drawing = mp.solutions.drawing_utils
 # Get the absolute path to the directory where your script is
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")  
+PROCESSED_FOLDER = os.path.join(BASE_DIR, "processed") 
+VIDEO_UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")  
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['PROCESSED_FOLDER'] = PROCESSED_FOLDER
+app.config['VIDEO_UPLOAD_FOLDER'] = VIDEO_UPLOAD_FOLDER
 
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
+
+if not os.path.exists(PROCESSED_FOLDER):
+    os.makedirs(PROCESSED_FOLDER)
+
+if not os.path.exists(VIDEO_UPLOAD_FOLDER):
+    os.makedirs(VIDEO_UPLOAD_FOLDER)
+
 
 # Function to calculate angles between three points
 def calculate_angle(a, b, c):
@@ -87,7 +99,162 @@ def get_processed_image():
     output_path = os.path.join(UPLOAD_FOLDER, "output.jpg")
     return send_file(output_path, mimetype="image/jpeg")
 
-# Generate frames for webcam feed
+
+# Function to calculate angle between three points
+def calculate_gait_angle(a, b, c):
+    """
+    Calculate the angle between three points (a, b, c) in degrees.
+    Each point is a tuple (x, y).
+    """
+    import math
+    # Convert points to vectors
+    vector1 = (a[0] - b[0], a[1] - b[1])
+    vector2 = (c[0] - b[0], c[1] - b[1])
+    # Compute dot product
+    dot_product = vector1[0] * vector2[0] + vector1[1] * vector2[1]
+    # Compute magnitudes
+    magnitude1 = math.sqrt(vector1[0]**2 + vector1[1]**2)
+    magnitude2 = math.sqrt(vector2[0]**2 + vector2[1]**2)
+    # Compute cosine of angle
+    cosine_angle = dot_product / (magnitude1 * magnitude2)
+    # Clamp cosine_angle to avoid numerical errors
+    cosine_angle = max(-1.0, min(1.0, cosine_angle))
+    # Compute angle in degrees
+    angle = math.degrees(math.acos(cosine_angle))
+    return angle
+
+# Process a single frame for gait analysis
+risk_text_buffer = []  # Store the risk text for multiple frames
+
+def process_frame(frame, pose):
+    global risk_text_buffer
+
+    # Convert frame to RGB
+    image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    results = pose.process(image_rgb)
+    
+    risk_text = ""  # Text to draw on the frame
+    
+    if results.pose_landmarks:
+        # Draw pose landmarks
+        mp_drawing.draw_landmarks(
+            frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
+            landmark_drawing_spec=mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=2, circle_radius=3),
+            connection_drawing_spec=mp_drawing.DrawingSpec(color=(255, 0, 0), thickness=2)
+        )
+        
+        # Extract keypoints
+        landmarks = results.pose_landmarks.landmark
+        
+        def get_point(index):
+            """Helper function to extract x, y coordinates of a landmark."""
+            return (landmarks[index].x, landmarks[index].y)
+        
+        # Define key points for gait analysis
+        left_hip = get_point(23)       # Left Hip
+        left_knee = get_point(25)     # Left Knee
+        left_ankle = get_point(27)    # Left Ankle
+        right_hip = get_point(24)     # Right Hip
+        right_knee = get_point(26)    # Right Knee
+        right_ankle = get_point(28)   # Right Ankle
+        
+        # Compute gait-specific angles
+        left_knee_angle = calculate_gait_angle(left_hip, left_knee, left_ankle)
+        right_knee_angle = calculate_gait_angle(right_hip, right_knee, right_ankle)
+        
+        # Detect gait abnormalities
+        if left_knee_angle < 160 or right_knee_angle < 160:
+            risk_text = "Abnormal Knee Angle: Risk of Unstable Gait!"
+        elif abs(left_knee_angle - right_knee_angle) > 20:
+            risk_text = "Asymmetric Knee Angles: Risk of Uneven Gait!"
+        
+        # Update the risk text buffer
+        if risk_text:
+            risk_text_buffer.append(risk_text)  # Add the new risk text
+            if len(risk_text_buffer) > 60:  # Limit the buffer size to 60 frames (adjust as needed)
+                risk_text_buffer.pop(0)  # Remove the oldest entry
+    
+    # Draw risk text on the frame (if there's any in the buffer)
+    if risk_text_buffer:
+        text_to_display = risk_text_buffer[0]  # Display the most recent risk text
+        cv2.putText(frame, text_to_display, (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 
+                    1.5, (0, 0, 255), 3, cv2.LINE_AA)  # Increased size and thickness
+
+    return frame
+
+      
+def process_video(input_path, output_path):
+    cap = cv2.VideoCapture(input_path)
+    if not cap.isOpened():
+        print(f"Error: Could not open video file at {input_path}")
+        return  # Exit if video cannot be opened
+    
+    fps = int(cap.get(cv2.CAP_PROP_FPS))
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fourcc = cv2.VideoWriter_fourcc(*'H264')
+    out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+    
+    if not out.isOpened():
+        print(f"Error: Could not open output video for writing at {output_path}")
+        cap.release()
+        return  # Exit if output video cannot be opened
+    
+    while cap.isOpened():
+        success, frame = cap.read()
+        if not success:
+            break
+        # Process each frame
+        processed_frame = process_frame(frame, pose2)
+        out.write(processed_frame)
+    
+    cap.release()
+    out.release()
+    cv2.destroyAllWindows()
+    print("Video processing complete: Released resources.")
+
+@app.route("/upload_video", methods=["POST"])
+def upload_video():
+    # Check if a file was uploaded
+    if "file" not in request.files:
+        return jsonify({"error": "No file part"}), 400
+    file = request.files["file"]
+    if file.filename == "":
+        return jsonify({"error": "No selected file"}), 400
+    
+    # Save the uploaded file with its original name
+    filename = file.filename  # Use the original filename
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    try:
+        file.save(filepath)
+    except Exception as e:
+        print(f"Error saving file: {e}")
+        return jsonify({"error": "Failed to save file"}), 500
+    
+    # Process the video and save it as "processed.mp4"
+    output_filename = "processed.mp4"  # Fixed name for the processed video
+    output_path = os.path.join(app.config['PROCESSED_FOLDER'], output_filename)
+    process_video(filepath, output_path)
+    
+    try:
+        os.remove(filepath)  # Remove the original video after processing
+    except Exception as e:
+        print(f"Error deleting file: {e}")
+        return jsonify({"error": "Video Processing Complete, but original video could not be deleted."}), 200
+    
+    # Return the path to the processed video
+    return jsonify({"message": "Video Processing Complete", "download_url": f"/download/{output_filename}"}), 200
+
+    
+
+    
+# Route to download processed video
+@app.route("/download/<filename>")
+def download_video(filename):
+    return send_file(os.path.join(app.config['PROCESSED_FOLDER'], filename), as_attachment=True)
+
+
+#webcam
 def generate_frames():
     cap = cv2.VideoCapture(0)  # Use webcam (change to 1 if using external camera)
     
@@ -152,6 +319,8 @@ def generate_frames():
 @app.route("/webcam")
 def webcam_feed():
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

@@ -2,6 +2,7 @@ package routes
 
 import (
 	"CNAD_Assignment_2/user-service/handlers"
+	"net/http"
 
 	"github.com/gorilla/mux"
 )
@@ -43,6 +44,12 @@ func RegisterUserRoutes(router *mux.Router) {
 	userRouter.HandleFunc("/questions", handlers.CreateQuestion).Methods("POST")
 	userRouter.HandleFunc("/options", handlers.CreateOption).Methods("POST")
 	userRouter.HandleFunc("/assessments/{id}", handlers.DeleteAssessment).Methods("DELETE")
+
+	// ✅ ADD Health Check Route (NEW)
+	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("User Service is healthy"))
+	}).Methods("GET")
 
 }
 
