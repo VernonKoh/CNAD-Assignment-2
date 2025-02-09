@@ -1,13 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quiz</title>
-    <style>
+<style>
         body {
             font-family: 'Arial', sans-serif;
             margin: 0;
@@ -126,6 +124,30 @@
         #result {
             text-align: center;
         }
+        .clinic-btn {
+        background-color: red; /* Red background color */
+        color: white;           /* White text color */
+        border: none;           /* Remove the border */
+        padding: 10px 20px;     /* Add padding for size */
+        font-size: 16px;        /* Adjust font size */
+        cursor: pointer;       /* Change cursor to pointer */
+        margin-left: 10px;      /* Space between buttons */
+        transition: background-color 0.3s; /* Smooth background color transition */
+        }
+
+        .clinic-btn:hover {
+            background-color: darkred; /* Darker red on hover */
+        }
+
+        .btn-container {
+            display: flex;          /* Use flexbox for horizontal layout */
+            align-items: center;    /* Align items vertically in the center */
+            justify-content: center; /* Center the buttons */
+        }
+
+        #submit-btn, #home-btn {
+            margin-right: 10px; /* Add some space between buttons */
+        }
     </style>
 </head>
 
@@ -137,8 +159,14 @@
 
     <div class="container">
         <div id="quiz-container"></div>
-        <button class="btn submit-btn" id="submit-btn" onclick="submitQuiz()" disabled>Submit</button>
-        <button class="btn home-btn" id="home-btn" onclick="window.location.href='welcome.html'">Return to Home</button>
+        <div class="btn-container">
+            <button class="btn submit-btn" id="submit-btn" onclick="submitQuiz()" disabled>Submit</button>
+            <button class="btn home-btn" id="home-btn" onclick="window.location.href='welcome.html'">Return to Home</button>
+            <button class="btn clinic-btn" id="clinic-btn" onclick="window.location.href='clinics.html'" style="display:none;">
+                Go to Clinics
+            </button>
+        </div>
+
         <div id="result" class="result"></div>
         <div id="errorMessage" class="error-message"></div>
     </div>
@@ -236,7 +264,9 @@
                     document.getElementById("submit-btn").style.display = "none";
                     document.getElementById("home-btn").style.display = "block";
 
+                    // Show "Go to Clinics" button if risk score is high
                     if (totalRiskScore > 10) {
+                        document.getElementById("clinic-btn").style.display = "block";
                         await updateHighRiskStatus(userID);
                     }
                 } else {
@@ -266,26 +296,25 @@
         }
 
         loadQuiz();
-        // Dynamically load the navbar
-    async function loadNavbar() {
-                try {
-                    const response = await fetch('navbar.html');
-                    if (response.ok) {
-                        const navbarHTML = await response.text();
-                        document.getElementById('navbar-container').innerHTML = navbarHTML;
-                    } else {
-                        console.error("Failed to load navbar: ", response.status, response.statusText);
-                    }
-                } catch (error) {
-                    console.error('Failed to load navbar:', error);
+
+        async function loadNavbar() {
+            try {
+                const response = await fetch('navbar.html');
+                if (response.ok) {
+                    const navbarHTML = await response.text();
+                    document.getElementById('navbar-container').innerHTML = navbarHTML;
+                } else {
+                    console.error("Failed to load navbar: ", response.status, response.statusText);
                 }
+            } catch (error) {
+                console.error('Failed to load navbar:', error);
             }
-            loadNavbar();  // Load navbar dynamically
+        }
+
+        loadNavbar();  // Load navbar dynamically
 
     </script>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-
-
 </body>
-
 </html>
